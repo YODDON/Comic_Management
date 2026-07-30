@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "MissionAPI.Protos";
+
+package missionprogress;
+
+service MissionProgress {
+  rpc RecordActivity (RecordMissionActivityRequest) returns (RecordMissionActivityResponse);
+}
+
+message RecordMissionActivityRequest {
+  int32 user_id = 1;
+  string mission_type = 2;
+  string activity_id = 3;
+  int64 occurred_at_unix_seconds = 4;
+}
+
+message RecordMissionActivityResponse {
+  bool success = 1;
+  string message = 2;
+}

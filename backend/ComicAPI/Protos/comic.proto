@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "ComicAPI.Protos";
+
+package comic;
+
+service ComicGrpc {
+  rpc CheckComicExists (CheckComicExistsRequest) returns (CheckComicExistsResponse);
+  rpc IncrementComicView (IncrementComicViewRequest) returns (IncrementComicViewResponse);
+}
+
+message CheckComicExistsRequest {
+  string comicId = 1;
+}
+
+message CheckComicExistsResponse {
+  bool exists = 1;
+  string status = 2;
+}
+
+message IncrementComicViewRequest {
+  string comicId = 1;
+}
+
+message IncrementComicViewResponse {
+  bool success = 1;
+}

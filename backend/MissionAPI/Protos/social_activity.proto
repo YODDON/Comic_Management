@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "SocialAPI.Protos";
+
+package socialactivity;
+
+service SocialActivity {
+  rpc GetUserActivities (GetUserActivitiesRequest) returns (GetUserActivitiesResponse);
+}
+
+message GetUserActivitiesRequest {
+  int32 user_id = 1;
+}
+
+message ActivitySnapshot {
+  string activity_id = 1;
+  int64 occurred_at_unix_seconds = 2;
+}
+
+message GetUserActivitiesResponse {
+  repeated ActivitySnapshot read_chapters = 1;
+  repeated ActivitySnapshot comments = 2;
+}

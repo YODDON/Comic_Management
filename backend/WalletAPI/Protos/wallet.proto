@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option csharp_namespace = "WalletAPI.Protos";
+
+package wallet;
+
+service WalletService {
+  rpc AddCoin (AddCoinRequest) returns (AddCoinResponse);
+  rpc DebitCoin (DebitCoinRequest) returns (DebitCoinResponse);
+}
+
+message AddCoinRequest {
+  string userId = 1;
+  double amount = 2; // gRPC uses double for precision, we'll cast to decimal in C#
+  string referenceId = 3;
+  string description = 4;
+  // TransactionType name: "ManualTopUp" (real money, withdrawable) or "MissionReward" (free, not
+  // withdrawable). Optional and additive; an empty value means "unknown", which the server treats
+  // as MissionReward (fail-closed) so an unlabelled credit can never be cashed out.
+  string creditType = 5;
+}
+
+message DebitCoinRequest {
+  string userId = 1;
+  double amount = 2;
+  string referenceId = 3;
+  string description = 4;
+}
+
+message DebitCoinResponse {
+  bool success = 1;
+  bool insufficientBalance = 2;
+  bool alreadyProcessed = 3;
+  string message = 4;
+  double balance = 5;
+}
+
+message AddCoinResponse {
+  bool success = 1;
+  string message = 2;
+}

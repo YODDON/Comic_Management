@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option csharp_namespace = "ChapterAPI.Protos";
+
+package chapter;
+
+service ChapterGrpc {
+  rpc UnlockChapter (UnlockChapterRequest) returns (UnlockChapterResponse);
+  rpc IsChapterPurchased (CheckRequest) returns (CheckResponse);
+  rpc GetChapterInfo (GetChapterInfoRequest) returns (GetChapterInfoResponse);
+}
+
+message UnlockChapterRequest {
+  string userId = 1;
+  string chapterId = 2;
+}
+
+message UnlockChapterResponse {
+  bool success = 1;
+  bool alreadyPurchased = 2;
+}
+
+message CheckRequest {
+  string userId = 1;
+  string chapterId = 2;
+}
+
+message CheckResponse {
+  bool isPurchased = 1;
+}
+
+message GetChapterInfoRequest {
+  string chapterId = 1;
+}
+
+message GetChapterInfoResponse {
+  bool exists = 1;
+  string comicId = 2;
+  double unitPrice = 3;
+  string title = 4;
+  int32 chapterNumber = 5;
+  string slug = 6;
+  string status = 7;
+}

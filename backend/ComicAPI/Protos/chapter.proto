@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "ChapterAPI.Protos";
+
+package chapter;
+
+service ChapterGrpc {
+  rpc GetChapterCount (GetChapterCountRequest) returns (GetChapterCountResponse);
+  rpc GetPurchasedComicIds (GetPurchasedComicIdsRequest) returns (GetPurchasedComicIdsResponse);
+}
+
+message GetChapterCountRequest {
+  string comicId = 1;
+}
+
+message GetChapterCountResponse {
+  int32 count = 1;
+}
+
+
+message GetPurchasedComicIdsRequest {
+  int32 userId = 1;
+}
+
+message GetPurchasedComicIdsResponse {
+  repeated string comicIds = 1;
+}

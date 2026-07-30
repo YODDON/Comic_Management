@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: prn232_sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SQL_SA_PASSWORD:-changeme123}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: prn232_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: prn232_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+
+  libretranslate:
+    image: libretranslate/libretranslate:v1.8.4
+    container_name: prn232_libretranslate
+    environment:
+      - LT_LOAD_ONLY=vi,en,ja,ko,zh,fr,de,es,th,id
+    ports:
+      - "5000:5000"
+    volumes:
+      - libretranslate_data:/home/libretranslate/.local
+    restart: unless-stopped
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.30.5
+    container_name: prn232_n8n
+    depends_on:
+      - libretranslate
+    environment:
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - TZ=Asia/Ho_Chi_Minh
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - WEBHOOK_URL=http://localhost:5678/
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+  redis_data:
+  rabbitmq_data:
+  libretranslate_data:
+  n8n_data:

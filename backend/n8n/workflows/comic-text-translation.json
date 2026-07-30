@@ -1,0 +1,124 @@
+{
+  "name": "Comico - Translate comic text only",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "comic-text-translate",
+        "authentication": "none",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "684657a4-aa87-4fdc-bf2c-29bfdf7d4aa0",
+      "name": "Translation Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -520,
+        0
+      ],
+      "webhookId": "comic-text-translate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? {};\nconst allowedBodyFields = new Set(['targetLanguage', 'texts']);\nconst unexpectedFields = Object.keys(body).filter((key) => !allowedBodyFields.has(key));\nif (unexpectedFields.length > 0) {\n  throw new Error(`Only text translation is allowed. Unexpected fields: ${unexpectedFields.join(', ')}`);\n}\n\nconst supportedLanguages = new Set(['vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es', 'th', 'id']);\nconst targetLanguage = String(body.targetLanguage ?? '').trim().toLowerCase();\nif (!supportedLanguages.has(targetLanguage)) {\n  throw new Error('Unsupported target language.');\n}\n\nif (!Array.isArray(body.texts) || body.texts.length === 0 || body.texts.length > 250) {\n  throw new Error('texts must contain between 1 and 250 text items.');\n}\n\nconst seenKeys = new Set();\nlet totalCharacters = 0;\nconst texts = body.texts.map((item) => {\n  const key = String(item?.key ?? '').trim();\n  const value = String(item?.value ?? '').trim();\n  if (!key || key.length > 200 || seenKeys.has(key)) {\n    throw new Error('Each text item must have a unique key of at most 200 characters.');\n  }\n  if (!value || value.length > 5000) {\n    throw new Error('Each text value must contain between 1 and 5000 characters.');\n  }\n  seenKeys.add(key);\n  totalCharacters += value.length;\n  return { key, value };\n});\n\nif (totalCharacters > 30000) {\n  throw new Error('The translation request exceeds 30000 characters.');\n}\n\nreturn [{ json: {\n  targetLanguage,\n  keys: texts.map((item) => item.key),\n  sourceTexts: texts.map((item) => item.value)\n} }];"
+      },
+      "id": "b571c8ac-730b-49ad-a754-b66bf08b2148",
+      "name": "Validate text-only payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5000/translate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ q: $json.sourceTexts, source: 'auto', target: $json.targetLanguage, format: 'text' }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "126aa820-0cc5-4265-84e6-a88dc1fd425a",
+      "name": "Translate with LibreTranslate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Validate text-only payload').first().json;\nconst translated = Array.isArray($json.translatedText)\n  ? $json.translatedText\n  : [$json.translatedText];\n\nif (translated.length !== request.keys.length) {\n  throw new Error('Translation provider returned an unexpected number of items.');\n}\n\nreturn [{ json: {\n  targetLanguage: request.targetLanguage,\n  items: request.keys.map((key, index) => ({\n    key,\n    value: String(translated[index] ?? request.sourceTexts[index])\n  }))\n} }];"
+      },
+      "id": "b96f1a0c-c9bd-4877-a3b9-529640fbb780",
+      "name": "Build translation response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Translation Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate text-only payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate text-only payload": {
+      "main": [
+        [
+          {
+            "node": "Translate with LibreTranslate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translate with LibreTranslate": {
+      "main": [
+        [
+          {
+            "node": "Build translation response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "47439c41-dfd5-4658-bad9-88df5a262eeb",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
