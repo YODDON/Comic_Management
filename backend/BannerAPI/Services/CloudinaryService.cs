@@ -11,9 +11,15 @@ public class CloudinaryService : ICloudinaryService
     public CloudinaryService(IConfiguration configuration)
     {
         var account = new Account(
-            Environment.GetEnvironmentVariable("CloudinarySettings__CloudName") ?? configuration["Cloudinary:CloudName"],
-            Environment.GetEnvironmentVariable("CloudinarySettings__ApiKey") ?? configuration["Cloudinary:ApiKey"],
-            Environment.GetEnvironmentVariable("CloudinarySettings__ApiSecret") ?? configuration["Cloudinary:ApiSecret"]);
+            Environment.GetEnvironmentVariable("Cloudinary__CloudName")
+                ?? Environment.GetEnvironmentVariable("CloudinarySettings__CloudName")
+                ?? configuration["Cloudinary:CloudName"],
+            Environment.GetEnvironmentVariable("Cloudinary__ApiKey")
+                ?? Environment.GetEnvironmentVariable("CloudinarySettings__ApiKey")
+                ?? configuration["Cloudinary:ApiKey"],
+            Environment.GetEnvironmentVariable("Cloudinary__ApiSecret")
+                ?? Environment.GetEnvironmentVariable("CloudinarySettings__ApiSecret")
+                ?? configuration["Cloudinary:ApiSecret"]);
         _cloudinary = new Cloudinary(account);
     }
 

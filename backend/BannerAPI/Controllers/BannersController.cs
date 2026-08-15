@@ -52,19 +52,12 @@ public class BannersController : ControllerBase
     [Authorize(Roles = "Admin")]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(10 * 1024 * 1024)]
-    public async Task<IActionResult> Upload(
-        [FromForm] UploadBannerImageRequestDto request,
-        [FromServices] ICloudinaryService cloudinary)
+    public async Task<IActionResult> Upload([FromForm] UploadBannerImageRequestDto request)
     {
-        try
-        {
-            var result = await cloudinary.UploadImageAsync(request.File);
-            return Ok(new { data = new { imageUrl = result.Url, imagePublicId = result.PublicId } });
-        }
-        catch (ArgumentException error)
-        {
-            return BadRequest(new { message = error.Message });
-        }
+        var response = await _bannerService.UploadImageAsync(request.File);
+        return response.Success
+            ? Ok(new { data = response.Data })
+            : StatusCode(response.StatusCode, new { message = response.Message });
     }
 
     [HttpPut("{id:guid}")]

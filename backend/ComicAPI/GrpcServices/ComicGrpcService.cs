@@ -4,26 +4,26 @@ using ComicAPI.Interfaces;
 using ComicAPI.Protos;
 using Grpc.Core;
 
-namespace ComicAPI.Services
+namespace ComicAPI.GrpcServices
 {
     public class ComicGrpcService : ComicGrpc.ComicGrpcBase
     {
-        private readonly IComicRepository _comicRepository;
+        private readonly IComicService _comicService;
 
-        public ComicGrpcService(IComicRepository comicRepository)
+        public ComicGrpcService(IComicService comicService)
         {
-            _comicRepository = comicRepository;
+            _comicService = comicService;
         }
 
         public override async Task<CheckComicExistsResponse> CheckComicExists(CheckComicExistsRequest request, ServerCallContext context)
         {
             if (Guid.TryParse(request.ComicId, out var comicId))
             {
-                var comic = await _comicRepository.GetComicByIdAsync(comicId);
+                var comic = await _comicService.CheckComicExistsAsync(comicId);
                 return new CheckComicExistsResponse
                 {
-                    Exists = comic != null,
-                    Status = comic?.Status.ToString() ?? string.Empty
+                    Exists = comic.Exists,
+                    Status = comic.Status
                 };
             }
             return new CheckComicExistsResponse { Exists = false };
@@ -36,7 +36,7 @@ namespace ComicAPI.Services
                 return new IncrementComicViewResponse { Success = false };
             }
 
-            var success = await _comicRepository.IncrementViewCountAsync(comicId);
+            var success = await _comicService.IncrementViewCountAsync(comicId);
             return new IncrementComicViewResponse { Success = success };
         }
     }

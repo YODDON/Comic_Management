@@ -6,6 +6,7 @@ using SharedKernel.Responses;
 using SocialAPI.DTOs;
 using SocialAPI.Entities;
 using SocialAPI.Interfaces;
+using SharedKernel.Enums;
 
 namespace SocialAPI.Services
 {
@@ -13,11 +14,16 @@ namespace SocialAPI.Services
     {
         private readonly ICommentRepository _repository;
         private readonly IComicValidator _comicValidator;
+        private readonly IMissionProgressNotifier _missionProgressNotifier;
 
-        public CommentService(ICommentRepository repository, IComicValidator comicValidator)
+        public CommentService(
+            ICommentRepository repository,
+            IComicValidator comicValidator,
+            IMissionProgressNotifier missionProgressNotifier)
         {
             _repository = repository;
             _comicValidator = comicValidator;
+            _missionProgressNotifier = missionProgressNotifier;
         }
 
         public async Task<PagedResult<CommentDto>> GetCommentsAsync(Guid comicId, int page, int pageSize)
@@ -59,7 +65,7 @@ namespace SocialAPI.Services
             return new PagedResult<CommentDto>(commentDtos, totalCount, page, pageSize);
         }
 
-        public async Task<CommentDto?> CreateCommentAsync(Guid userId, CreateCommentDto dto)
+        public async Task<CommentDto?> CreateCommentAsync(int numericUserId, Guid userId, CreateCommentDto dto)
         {
             var exists = await _comicValidator.ExistsAsync(dto.ComicId);
             if (!exists)
@@ -78,7 +84,7 @@ namespace SocialAPI.Services
             await _repository.AddAsync(comment);
             await _repository.SaveChangesAsync();
 
-            return new CommentDto
+            var result = new CommentDto
             {
                 Id = comment.Id,
                 UserId = comment.UserId,
@@ -87,6 +93,9 @@ namespace SocialAPI.Services
                 ParentCommentId = comment.ParentCommentId,
                 CreatedAt = comment.CreatedAt
             };
+            await _missionProgressNotifier.RecordAsync(
+                numericUserId, MissionType.LeaveComment, result.Id, result.CreatedAt);
+            return result;
         }
 
         public async Task<bool> DeleteCommentAsync(Guid id, Guid userId, bool isAdmin)

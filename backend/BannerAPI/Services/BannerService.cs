@@ -115,6 +115,23 @@ public class BannerService : IBannerService
         return new ApiResponse<bool>(true, "Banner deleted successfully.");
     }
 
+    public async Task<ApiResponse<BannerImageUploadDto>> UploadImageAsync(IFormFile file)
+    {
+        try
+        {
+            var result = await _cloudinaryService.UploadImageAsync(file);
+            return new ApiResponse<BannerImageUploadDto>(new BannerImageUploadDto
+            {
+                ImageUrl = result.Url,
+                ImagePublicId = result.PublicId
+            }, "Banner image uploaded successfully.");
+        }
+        catch (ArgumentException error)
+        {
+            return ApiResponse<BannerImageUploadDto>.ErrorResponse(error.Message, 400);
+        }
+    }
+
     private static BannerDto Map(Banner banner) => new()
     {
         Id = banner.Id,

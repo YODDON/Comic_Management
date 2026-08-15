@@ -3,7 +3,7 @@ using MissionAPI.Interfaces;
 using MissionAPI.Protos;
 using SharedKernel.Enums;
 
-namespace MissionAPI.Services;
+namespace MissionAPI.GrpcServices;
 
 public class MissionProgressGrpcService : MissionProgress.MissionProgressBase
 {

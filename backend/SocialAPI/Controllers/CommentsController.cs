@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialAPI.DTOs;
 using SocialAPI.Interfaces;
-using SharedKernel.Enums;
 
 namespace SocialAPI.Controllers
 {
@@ -14,14 +13,10 @@ namespace SocialAPI.Controllers
     public class CommentsController : ControllerBase
     {
         private readonly ICommentService _commentService;
-        private readonly IMissionProgressNotifier _missionProgressNotifier;
 
-        public CommentsController(
-            ICommentService commentService,
-            IMissionProgressNotifier missionProgressNotifier)
+        public CommentsController(ICommentService commentService)
         {
             _commentService = commentService;
-            _missionProgressNotifier = missionProgressNotifier;
         }
 
         [HttpGet]
@@ -52,14 +47,11 @@ namespace SocialAPI.Controllers
             }
             var userId = ToSocialUserId(numericUserId);
 
-            var result = await _commentService.CreateCommentAsync(userId, dto);
+            var result = await _commentService.CreateCommentAsync(numericUserId, userId, dto);
             if (result == null)
             {
                 return NotFound("Comic not found");
             }
-
-            await _missionProgressNotifier.RecordAsync(
-                numericUserId, MissionType.LeaveComment, result.Id, result.CreatedAt);
 
             return CreatedAtAction(nameof(GetComments), new { comicId = result.ComicId }, result);
         }

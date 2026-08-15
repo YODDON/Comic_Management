@@ -90,17 +90,12 @@ namespace ComicAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         [Consumes("multipart/form-data")]
         [RequestSizeLimit(5 * 1024 * 1024)]
-        public async Task<IActionResult> UploadCover(
-            [FromForm] UploadComicCoverRequestDto request,
-            [FromServices] ICloudinaryService cloudinaryService)
+        public async Task<IActionResult> UploadCover([FromForm] UploadComicCoverRequestDto request)
         {
-            var imageUrl = await cloudinaryService.UploadImageAsync(request.File);
-            if (string.IsNullOrWhiteSpace(imageUrl))
-            {
-                return BadRequest(new { message = "Không thể tải ảnh bìa lên." });
-            }
-
-            return Ok(new { data = new { thumbnailUrl = imageUrl } });
+            var response = await _comicService.UploadCoverAsync(request.File);
+            return response.Success
+                ? Ok(new { data = response.Data })
+                : StatusCode(response.StatusCode, new { message = response.Message });
         }
 
         [HttpPut("{id}")]

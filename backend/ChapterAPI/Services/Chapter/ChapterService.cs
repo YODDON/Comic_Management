@@ -6,6 +6,8 @@ using ChapterAPI.DTOs;
 using ChapterAPI.Interfaces;
 using SharedKernel.Responses;
 using Grpc.Core;
+using ChapterAPI.Entities;
+using SharedKernel.Enums;
 
 namespace ChapterAPI.Services
 {
@@ -15,17 +17,51 @@ namespace ChapterAPI.Services
         private readonly IMapper _mapper;
         private readonly ChapterAPI.Protos.ComicGrpc.ComicGrpcClient _comicServiceClient;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IMissionProgressNotifier _missionProgressNotifier;
 
         public ChapterService(
             IChapterRepository repository, 
             IMapper mapper, 
             ChapterAPI.Protos.ComicGrpc.ComicGrpcClient comicServiceClient,
-            ICloudinaryService cloudinaryService)
+            ICloudinaryService cloudinaryService,
+            IMissionProgressNotifier missionProgressNotifier)
         {
             _repository = repository;
             _mapper = mapper;
             _comicServiceClient = comicServiceClient;
             _cloudinaryService = cloudinaryService;
+            _missionProgressNotifier = missionProgressNotifier;
+        }
+
+        public async Task<(bool Success, bool AlreadyPurchased)> UnlockChapterAsync(int userId, Guid chapterId)
+        {
+            var alreadyPurchased = await _repository.HasUserPurchasedChapterAsync(userId, chapterId);
+            if (alreadyPurchased)
+            {
+                await NotifyChapterPurchaseAsync(userId, chapterId);
+                return (true, true);
+            }
+
+            var success = await _repository.UnlockChapterAsync(userId, chapterId);
+            if (success) await NotifyChapterPurchaseAsync(userId, chapterId);
+            return (success, false);
+        }
+
+        public Task<bool> IsChapterPurchasedAsync(int userId, Guid chapterId) =>
+            _repository.HasUserPurchasedChapterAsync(userId, chapterId);
+
+        public Task<Chapter?> GetChapterInfoAsync(Guid chapterId) =>
+            _repository.GetChapterByIdAsync(chapterId, false);
+
+        public Task<int> GetChapterCountAsync(Guid comicId) => _repository.GetChapterCountAsync(comicId);
+        public Task<List<Guid>> GetPurchasedComicIdsAsync(int userId) => _repository.GetPurchasedComicIdsAsync(userId);
+        public Task<List<UserPurchase>> GetUserPurchaseActivitiesAsync(int userId) =>
+            _repository.GetUserPurchaseActivitiesAsync(userId);
+
+        private async Task NotifyChapterPurchaseAsync(int userId, Guid chapterId)
+        {
+            await _missionProgressNotifier.RecordAsync(
+                userId, MissionType.PurchaseChapter, chapterId, DateTime.UtcNow);
         }
 
         public async Task<ApiResponse<PagedResult<ChapterSummaryDto>>> GetChaptersAsync(

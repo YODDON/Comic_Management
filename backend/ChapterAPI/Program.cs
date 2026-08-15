@@ -81,7 +81,7 @@ using (var scope = app.Services.CreateScope())
     db?.Database.Migrate();
 }
 
-app.MapGrpcService<ChapterAPI.Services.ChapterGrpcService>();
+app.MapGrpcService<ChapterAPI.GrpcServices.ChapterGrpcService>();
 
 if (app.Environment.IsDevelopment())
 {

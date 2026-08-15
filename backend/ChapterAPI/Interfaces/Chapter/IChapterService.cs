@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using ChapterAPI.DTOs;
 using SharedKernel.Responses;
+using ChapterAPI.Entities;
 
 namespace ChapterAPI.Interfaces
 {
@@ -19,5 +20,11 @@ namespace ChapterAPI.Interfaces
         Task<ApiResponse<bool>> ReorderPagesAsync(Guid chapterId, List<ReorderPageDto> request);
         Task<ApiResponse<bool>> DeletePageAsync(Guid chapterId, Guid pageId);
         Task<ApiResponse<int>> DeletePagesAsync(Guid chapterId, List<Guid> pageIds);
+        Task<(bool Success, bool AlreadyPurchased)> UnlockChapterAsync(int userId, Guid chapterId);
+        Task<bool> IsChapterPurchasedAsync(int userId, Guid chapterId);
+        Task<Chapter?> GetChapterInfoAsync(Guid chapterId);
+        Task<int> GetChapterCountAsync(Guid comicId);
+        Task<List<Guid>> GetPurchasedComicIdsAsync(int userId);
+        Task<List<UserPurchase>> GetUserPurchaseActivitiesAsync(int userId);
     }
 }

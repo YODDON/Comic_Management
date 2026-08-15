@@ -116,6 +116,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGrpcService<ComicAPI.Services.ComicGrpcService>();
+app.MapGrpcService<ComicAPI.GrpcServices.ComicGrpcService>();
 
 app.Run();

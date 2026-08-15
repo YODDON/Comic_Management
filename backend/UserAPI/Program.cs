@@ -25,10 +25,13 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAdminUserRepository, AdminUserRepository>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAvatarStorageService, AvatarStorageService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserQueryService, UserQueryService>();
 
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();

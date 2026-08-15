@@ -1,0 +1,255 @@
+# Current Architecture
+
+This document describes `CURRENT` runtime architecture only. Approved target architecture and migration sequence remain in planning/decision documents until source code, project references, and runtime structure actually change.
+
+## System overview
+
+```mermaid
+flowchart LR
+    UI[React + Vite SPA] -->|REST/JSON| GW[YARP API Gateway]
+    GW --> U[UserAPI]
+    GW --> C[ComicAPI]
+    GW --> CH[ChapterAPI]
+    GW --> S[SocialAPI]
+    GW --> M[MissionAPI]
+    GW --> P[PaymentAPI]
+    GW --> W[WalletAPI]
+    GW --> B[BannerAPI]
+
+    U --> UDB[(User DB)]
+    C --> CDB[(Comic DB)]
+    CH --> CHDB[(Chapter DB)]
+    S --> SDB[(Social DB)]
+    M --> MDB[(Mission DB)]
+    P --> PDB[(Payment DB)]
+    W --> WDB[(Wallet DB)]
+    B --> BDB[(Banner DB)]
+```
+
+The repository is a monorepo. The frontend uses one public backend origin: `ApiGateway`. YARP maps public path prefixes to eight independently hosted ASP.NET Core APIs. Each business API has its own EF Core context and migration history.
+
+Canonical details:
+
+- Service ownership: [SERVICE_CATALOG.md](SERVICE_CATALOG.md)
+- Network contracts: [COMMUNICATION.md](COMMUNICATION.md)
+- Database ownership and constraints: [DATABASE.md](DATABASE.md)
+- Physical repository layout: [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
+
+## Runtime components
+
+| Component | Current responsibility |
+|---|---|
+| React/Vite frontend | Browser UI, client-side routing, JWT storage/use, REST calls |
+| ApiGateway | YARP reverse proxy, edge JWT authentication, public/protected-path check, CORS, selected error normalization |
+| Eight business APIs | Domain-specific REST endpoints, synchronous gRPC servers/clients, persistence |
+| SQL Server | Separate logical database connection per service |
+| Cloudinary | Avatar, comic cover, chapter page, banner, and mission upload storage depending on service |
+| n8n + LibreTranslate | Text translation webhook used by ComicAPI |
+| SMTP + Google Auth | Email workflows and Google login in UserAPI |
+| VietQR + SePay | Deposit QR generation and bank webhook processing in PaymentAPI |
+| Redis | Container only; no application cache client is implemented |
+| RabbitMQ | Container only; no publisher, consumer, event contract, Outbox, or Inbox is implemented |
+
+## Architecture inside services
+
+### Current pattern
+
+Each business service is currently one `.csproj`. Most use folder-based layering:
+
+```text
+REST Controller or gRPC adapter
+              ↓
+Application/service class
+              ↓
+Repository abstraction/implementation
+              ↓
+EF Core DbContext and service-owned database
+```
+
+DTOs, entities, interfaces, repositories, services, generated gRPC types, configuration, and infrastructure adapters live in the same project. This is layered architecture, not compiler-enforced Clean Architecture.
+
+Not every operation needs persistence. Translation and image upload flow from controller to a service and then to an external adapter without a repository.
+
+### Dependency direction currently enforced by code review
+
+- Controllers and gRPC server adapters should not access `DbContext` or repositories directly.
+- Services orchestrate use cases and dependencies.
+- Repositories contain EF Core queries and local database transactions.
+- Public REST responses use DTOs/response wrappers rather than returning EF entities directly.
+- Infrastructure types can still be referenced from service projects because layers are not separate projects.
+
+See [CONVENTIONS.md](CONVENTIONS.md) for required versus observed conventions.
+
+## API Gateway
+
+`ApiGateway` is not a business service and has no database. It loads YARP routes from `ApiGateway/appsettings.json` and routes `/auth`, `/comics`, `/categories`, `/translations`, `/chapters`, social paths, payments, wallet paths, missions, notifications, uploads, and banners.
+
+Gateway behavior implemented in `Program.cs`:
+
+- JWT Bearer authentication using shared issuer/audience/secret configuration.
+- CORS for one configured frontend origin, defaulting to `http://localhost:5173`.
+- A hard-coded public-path allowlist; unmatched/protected requests without an authenticated user return `401`.
+- Conversion of selected `401`, `404`, `502`, and `503` responses to the shared `ApiResponse` JSON shape.
+- `502` from an unavailable downstream service is exposed as `503`.
+
+The downstream APIs also configure JWT authentication and controller authorization. Gateway authentication is therefore not the only authorization boundary.
+
+## Database-per-service
+
+The code has eight service-owned `DbContext` types. Cross-service references such as user, comic, or chapter IDs are scalar values; they are not EF navigation properties to another service database. No service registers another service's `DbContext`.
+
+The repository does not contain a shared database context or cross-database foreign keys. Exact constraints and startup migration behavior are documented in [DATABASE.md](DATABASE.md).
+
+## Synchronous communication
+
+The current backend uses gRPC for internal calls that either query another service or perform a synchronous command. Examples include:
+
+- ComicAPI looking up users and chapter information.
+- ChapterAPI validating a comic and notifying MissionAPI of activity.
+- SocialAPI notifying MissionAPI of activity.
+- MissionAPI reading Chapter/Social activity snapshots and crediting WalletAPI.
+- PaymentAPI querying/unlocking ChapterAPI and debiting/crediting WalletAPI.
+
+There are circular synchronous dependencies at service level: ComicAPI ↔ ChapterAPI, ChapterAPI ↔ MissionAPI, and SocialAPI ↔ MissionAPI. They are current limitations, not an intended event-driven design. See [COMMUNICATION.md](COMMUNICATION.md).
+
+## Asynchronous communication
+
+**NOT IMPLEMENTED.** RabbitMQ is declared by Docker Compose, but no backend project references a RabbitMQ/MassTransit client and no publisher, consumer, queue, event envelope, retry policy, DLQ, Outbox, or Inbox exists in application code.
+
+Do not describe the current runtime as event-driven.
+
+## Authentication and authorization
+
+UserAPI issues JWT access tokens and refresh tokens. It supports registration, email verification, login/logout, refresh, password reset, Google login, profile updates, avatar upload, and admin user management.
+
+Roles seeded by `UserDbContext` are `Admin`, `Guest`, and `Reader`. Controllers use `[Authorize]` and role restrictions. The Gateway additionally classifies routes as public or protected.
+
+Current limitation: JWT validation is not configured identically in every service. Most validate issuer/audience; PaymentAPI and MissionAPI use less strict settings. Configuration must be inspected before changing authentication behavior.
+
+## Important runtime flows
+
+### Login
+
+```mermaid
+sequenceDiagram
+    participant UI as Frontend
+    participant GW as ApiGateway
+    participant U as UserAPI
+    participant DB as UserDB
+    UI->>GW: POST /auth/login
+    GW->>U: Proxy request
+    U->>DB: Load user/roles and persist refresh token
+    U-->>UI: Access token + refresh token response
+```
+
+The frontend stores tokens in `localStorage`. Admin UI routes additionally call `/auth/me` to verify the current role.
+
+### Browse and read a chapter
+
+1. Frontend requests comic metadata through `/comics` and chapters through `/chapters`.
+2. ComicAPI may call UserAPI for author data and ChapterAPI for counts/purchased comic IDs.
+3. ChapterAPI restricts public chapter listings to `Published` status.
+4. For page access, ChapterAPI checks price/purchase state in ChapterDB.
+5. Reading activity is recorded synchronously in MissionAPI through gRPC; reading history is separately stored in SocialDB when the frontend posts `/reading-history`.
+
+### Purchase a paid chapter
+
+```mermaid
+sequenceDiagram
+    participant UI as Frontend
+    participant P as PaymentAPI
+    participant W as WalletAPI
+    participant C as ChapterAPI
+    participant PDB as PaymentDB
+    UI->>P: POST /api/payments/purchased-chapter
+    P->>C: gRPC GetChapterInfo
+    P->>PDB: Begin local transaction / pending transaction
+    P->>W: gRPC DebitCoin(reference = transaction ID)
+    P->>PDB: Add UserPurchase
+    P->>C: gRPC UnlockChapter
+    alt unlock succeeds
+        P->>PDB: Complete transaction and commit
+    else unlock/call fails after debit
+        P->>W: gRPC AddCoin(refund reference)
+        P->>PDB: Mark/save failure when possible
+    end
+```
+
+Wallet credit/debit is idempotent by unique `CurrencyEntry.ReferenceId`. PaymentAPI contains a best-effort compensation path that refunds a successful debit if chapter unlock fails. This is not a persisted purchase state machine or distributed transaction; a process/network failure can still require reconciliation.
+
+### Deposit through VietQR/SePay
+
+1. Frontend creates a pending deposit through `/payments/deposit`.
+2. PaymentAPI persists a unique transaction code and returns a VietQR image URL.
+3. SePay sends an authenticated webhook to `/payments/sepay-webhook`.
+4. PaymentAPI extracts the transaction code, requires a pending transaction, and uses the amount actually received.
+5. PaymentAPI calls WalletAPI `AddCoin` using the payment transaction ID as idempotency reference.
+6. After wallet credit succeeds, PaymentAPI marks the transaction completed.
+
+If wallet credit fails, the transaction remains pending so the webhook can be retried. The webhook fails closed when the SePay API key is not configured.
+
+### Wallet and withdrawal
+
+- WalletAPI owns wallet balance, ledger entries, and withdrawal requests.
+- Credit/debit operations run under serializable local transactions and deduplicate by `ReferenceId`.
+- Withdrawable balance excludes unspent mission-reward credit according to `WalletRules`.
+- One pending withdrawal per wallet is enforced by a filtered unique index.
+- Creating a withdrawal deducts amount plus fee; rejecting it refunds both through a ledger entry.
+
+### Missions and activity
+
+- ChapterAPI and SocialAPI call MissionAPI `RecordActivity` synchronously.
+- MissionAPI also calls ChapterAPI and SocialAPI to synchronize historical activity snapshots.
+- `MissionActivity` has a unique `(UserId, MissionId, ActivityId)` index to prevent duplicate counting.
+- Completing a mission calls WalletAPI synchronously with a mission/user-derived reference so wallet credit can be deduplicated.
+
+### Comment/social activity
+
+- SocialAPI owns comments, favorites, follows, and reading history.
+- Comments support one parent/replies relationship.
+- Comment creation validates the comic through an HTTP `ComicValidator`, then notifies MissionAPI through gRPC.
+- Favorite, follow, and reading-history records have composite unique constraints.
+
+### Translation
+
+```text
+Frontend -> Gateway /translations -> ComicAPI -> n8n webhook -> LibreTranslate
+```
+
+Only text is sent. The n8n workflow is stored under `backend/n8n/workflows/`. Translation is unavailable when the webhook is not configured/reachable; other APIs can continue running.
+
+## External integrations
+
+| Service | Integration | Purpose |
+|---|---|---|
+| UserAPI | SMTP via MailKit | Verification and password-reset email |
+| UserAPI | Google token validation | Google login |
+| UserAPI | Cloudinary | Avatar storage |
+| ComicAPI | Cloudinary | Comic cover storage |
+| ComicAPI | n8n webhook / LibreTranslate | Text translation |
+| ChapterAPI | Cloudinary | Chapter page storage |
+| MissionAPI | Cloudinary | Upload storage |
+| PaymentAPI | VietQR image endpoint | Deposit QR generation |
+| PaymentAPI | SePay webhook | Incoming transfer confirmation |
+| BannerAPI | Cloudinary | Banner image storage |
+
+## Current constraints and limitations
+
+This section classifies current limitations; it is not a migration backlog.
+
+| Category | Current limitation | Main risk | Canonical detail/change owner |
+|---|---|---|---|
+| Security / correctness | SocialAPI `ComicValidator` uses a default URL/path that does not match Gateway and returns `true` on exceptions | Invalid comic references may pass validation when the dependency fails | [COMMUNICATION.md](COMMUNICATION.md); SocialAPI implementation |
+| Security / correctness | JWT issuer/audience validation is not configured consistently across services | Authentication behavior can differ by route/service | This document and [CONVENTIONS.md](CONVENTIONS.md); Gateway and affected APIs |
+| Data / persistence | Startup mixes `Migrate()` and `EnsureCreated()` | Schema evolution can differ between services/environments | [DATABASE.md](DATABASE.md) |
+| Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Reliability | Payment → Wallet → Chapter purchase orchestration can partially succeed; refund is best effort | Balance, payment record, and entitlement may require reconciliation | [DATABASE.md](DATABASE.md) and [COMMUNICATION.md](COMMUNICATION.md) |
+| Reliability | Mission reward depends on synchronous Wallet credit and has no durable retry | A timeout/failure can leave reward state incomplete | [COMMUNICATION.md](COMMUNICATION.md) |
+| Reliability | No Outbox/Inbox, RabbitMQ application integration, or persisted cross-service purchase state machine | Cross-service delivery is not durable or exactly-once | [COMMUNICATION.md](COMMUNICATION.md) and [DECISIONS.md](DECISIONS.md) |
+| Infrastructure | Redis and RabbitMQ containers exist without application cache/messaging integration | Operators may assume capabilities that runtime does not provide | [COMMUNICATION.md](COMMUNICATION.md) and [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Coupling | ComicAPI ↔ ChapterAPI, ChapterAPI ↔ MissionAPI, and SocialAPI ↔ MissionAPI form synchronous cycles | Availability and deployment coupling; longer failure chains | [COMMUNICATION.md](COMMUNICATION.md) |
+| Verification | No automated test project is committed | Critical flows rely on build/manual verification | [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Observability | Default ASP.NET Core logging only; no standardized correlation or distributed tracing/OpenTelemetry | Cross-service failures are harder to trace | [CONVENTIONS.md](CONVENTIONS.md) |
+| Structure | Services remain one project with folder layering | Dependency direction is code-review enforced rather than compiler enforced | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) and [DECISIONS.md](DECISIONS.md) |
+
+These limitations do not mean the proposed replacement architecture is already approved or implemented. Canonical documents must be updated only when the corresponding code/configuration changes.
