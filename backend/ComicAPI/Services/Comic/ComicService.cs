@@ -64,6 +64,25 @@ namespace ComicAPI.Services
             return new ApiResponse<List<ComicSummaryDto>>(dtos, "Hot comics retrieved.", 200);
         }
 
+        public async Task<ApiResponse<ComicCoverUploadDto>> UploadCoverAsync(IFormFile file)
+        {
+            var imageUrl = await _cloudinaryService.UploadImageAsync(file);
+            return string.IsNullOrWhiteSpace(imageUrl)
+                ? ApiResponse<ComicCoverUploadDto>.ErrorResponse("Không thể tải ảnh bìa lên.", 400)
+                : new ApiResponse<ComicCoverUploadDto>(
+                    new ComicCoverUploadDto { ThumbnailUrl = imageUrl },
+                    "Comic cover uploaded successfully.");
+        }
+
+        public async Task<(bool Exists, string Status)> CheckComicExistsAsync(Guid comicId)
+        {
+            var comic = await _comicRepository.GetComicByIdAsync(comicId);
+            return (comic is not null, comic?.Status.ToString() ?? string.Empty);
+        }
+
+        public Task<bool> IncrementViewCountAsync(Guid comicId) =>
+            _comicRepository.IncrementViewCountAsync(comicId);
+
         public async Task<ApiResponse<List<ComicSummaryDto>>> GetOutstandingComicsAsync(int limit)
         {
             if (limit <= 0) limit = 10;

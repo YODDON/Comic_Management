@@ -30,6 +30,10 @@ builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 builder.Services.AddScoped<IFollowRepository, FollowRepository>();
 builder.Services.AddScoped<IFollowService, FollowService>();
+builder.Services.AddScoped<IReadingHistoryRepository, ReadingHistoryRepository>();
+builder.Services.AddScoped<IReadingHistoryService, ReadingHistoryService>();
+builder.Services.AddScoped<ISocialActivityRepository, SocialActivityRepository>();
+builder.Services.AddScoped<ISocialActivityService, SocialActivityService>();
 builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
 
 var missionApiUrl = Environment.GetEnvironmentVariable("MISSION_API_URL")
@@ -86,7 +90,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGrpcService<SocialAPI.Services.SocialActivityGrpcService>();
+app.MapGrpcService<SocialAPI.GrpcServices.SocialActivityGrpcService>();
 app.MapControllers();
 
 app.Run();

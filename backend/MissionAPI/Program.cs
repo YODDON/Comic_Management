@@ -28,9 +28,18 @@ builder.Services.AddScoped<MissionAPI.Interfaces.IWalletGrpcClient, MissionAPI.S
 builder.Services.AddScoped<MissionAPI.Interfaces.ICloudinaryService, MissionAPI.Services.CloudinaryService>();
 builder.Services.Configure<MissionAPI.Settings.CloudinarySettings>(options =>
 {
-    options.CloudName = Environment.GetEnvironmentVariable("CloudinarySettings__CloudName") ?? builder.Configuration["CloudinarySettings:CloudName"] ?? "";
-    options.ApiKey = Environment.GetEnvironmentVariable("CloudinarySettings__ApiKey") ?? builder.Configuration["CloudinarySettings:ApiKey"] ?? "";
-    options.ApiSecret = Environment.GetEnvironmentVariable("CloudinarySettings__ApiSecret") ?? builder.Configuration["CloudinarySettings:ApiSecret"] ?? "";
+    options.CloudName = Environment.GetEnvironmentVariable("Cloudinary__CloudName")
+        ?? Environment.GetEnvironmentVariable("CloudinarySettings__CloudName")
+        ?? builder.Configuration["Cloudinary:CloudName"]
+        ?? "";
+    options.ApiKey = Environment.GetEnvironmentVariable("Cloudinary__ApiKey")
+        ?? Environment.GetEnvironmentVariable("CloudinarySettings__ApiKey")
+        ?? builder.Configuration["Cloudinary:ApiKey"]
+        ?? "";
+    options.ApiSecret = Environment.GetEnvironmentVariable("Cloudinary__ApiSecret")
+        ?? Environment.GetEnvironmentVariable("CloudinarySettings__ApiSecret")
+        ?? builder.Configuration["Cloudinary:ApiSecret"]
+        ?? "";
 });
 
 var jwtSecret = Environment.GetEnvironmentVariable("JwtSettings__Secret") ?? builder.Configuration["JwtSettings:Secret"];
@@ -117,7 +126,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGrpcService<MissionAPI.Services.MissionProgressGrpcService>();
+app.MapGrpcService<MissionAPI.GrpcServices.MissionProgressGrpcService>();
 app.MapControllers();
 
 app.Run();

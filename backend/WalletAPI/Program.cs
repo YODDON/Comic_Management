@@ -17,6 +17,8 @@ builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<IWithdrawRepository, WithdrawRepository>();
 builder.Services.AddScoped<IWithdrawService, WithdrawService>();
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<IWalletApplicationService, WalletApplicationService>();
 
 var walletConn = Environment.GetEnvironmentVariable("WALLET_DB_CONNECTION")
     ?? builder.Configuration.GetConnectionString("WalletConnection")
@@ -78,6 +80,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGrpcService<WalletAPI.Services.WalletGrpcService>();
+app.MapGrpcService<WalletAPI.GrpcServices.WalletGrpcService>();
 
 app.Run();

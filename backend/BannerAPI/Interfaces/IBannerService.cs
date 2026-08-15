@@ -11,4 +11,5 @@ public interface IBannerService
     Task<ApiResponse<BannerDto>> CreateAsync(CreateBannerRequestDto request);
     Task<ApiResponse<BannerDto>> UpdateAsync(Guid id, UpdateBannerRequestDto request);
     Task<ApiResponse<bool>> DeleteAsync(Guid id);
+    Task<ApiResponse<BannerImageUploadDto>> UploadImageAsync(IFormFile file);
 }

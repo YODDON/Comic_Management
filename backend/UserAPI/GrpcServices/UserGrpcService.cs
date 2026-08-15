@@ -9,13 +9,11 @@ namespace UserAPI.GrpcServices
 {
     public class UserGrpcService : UserService.UserServiceBase
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        private readonly IUserQueryService _userQueryService;
 
-        public UserGrpcService(IUserRepository userRepository, IJwtTokenGenerator jwtTokenGenerator)
+        public UserGrpcService(IUserQueryService userQueryService)
         {
-            _userRepository = userRepository;
-            _jwtTokenGenerator = jwtTokenGenerator;
+            _userQueryService = userQueryService;
         }
 
         public override async Task<UserResponse> GetUserById(GetUserByIdRequest request, ServerCallContext context)
@@ -25,7 +23,7 @@ namespace UserAPI.GrpcServices
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user ID format."));
             }
 
-            var user = await _userRepository.GetUserByIdAsync(userId);
+            var user = await _userQueryService.GetUserByIdAsync(userId);
             if (user == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "User not found."));
@@ -57,7 +55,7 @@ namespace UserAPI.GrpcServices
                 }
             }
 
-            var users = await _userRepository.GetUsersByIdsAsync(userIds);
+            var users = await _userQueryService.GetUsersByIdsAsync(userIds);
             var response = new UsersListResponse();
 
             foreach (var user in users)
@@ -87,7 +85,7 @@ namespace UserAPI.GrpcServices
                 return Task.FromResult(new ValidateTokenResponse { IsValid = false });
             }
 
-            var claimsPrincipal = _jwtTokenGenerator.ValidateToken(request.Token);
+            var claimsPrincipal = _userQueryService.ValidateToken(request.Token);
             if (claimsPrincipal == null)
             {
                 return Task.FromResult(new ValidateTokenResponse { IsValid = false });
