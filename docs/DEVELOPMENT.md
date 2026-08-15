@@ -26,7 +26,7 @@ Use [backend/.env.example](../backend/.env.example) as a local configuration inv
 | Databases | `AUTH_DB_CONNECTION`, `COMIC_DB_CONNECTION`, `CHAPTER_DB_CONNECTION`, `SOCIAL_DB_CONNECTION`, `MISSION_DB_CONNECTION`, `PAYMENT_DB_CONNECTION`, `WALLET_DB_CONNECTION`, `BANNER_DB_CONNECTION` |
 | JWT | `JwtSettings__Secret`, `JwtSettings__Issuer`, `JwtSettings__Audience`, `JwtSettings__ExpiryMinutes` |
 | Internal services | `USER_API_URL`, `COMIC_API_URL`, `CHAPTER_API_URL`, `MISSION_API_URL`, `SOCIAL_API_URL`, `WALLET_API_URL`, plus selected `GrpcEndpoints__...` keys |
-| Public URLs | `API_GATEWAY_URL`, `FRONTEND_URL` where used by current code |
+| Public URLs | `API_GATEWAY_URL` for SocialAPI comic validation, `FRONTEND_URL` where used by current code |
 | Cloudinary | `Cloudinary__CloudName`, `Cloudinary__ApiKey`, `Cloudinary__ApiSecret`; some services read `CloudinarySettings__...` instead |
 | Email and Google | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `GOOGLE_CLIENT_ID` |
 | Payment | `TopUp__CoinRate`, `BankSettings__BankCode`, `BankSettings__AccountNumber`, `BankSettings__AccountName`, `BankSettings__SepayApiKey` |
@@ -34,6 +34,8 @@ Use [backend/.env.example](../backend/.env.example) as a local configuration inv
 | Docker infrastructure | `SQL_SA_PASSWORD`, `RABBITMQ_USER`, `RABBITMQ_PASS` |
 
 `backend/.env.example` lists the current primary environment keys, including internal/public service URLs and the standardized `Cloudinary__...` keys. BannerAPI and MissionAPI still accept the legacy `CloudinarySettings__...` prefix as a compatibility fallback. Committed `appsettings.json` connection-string values are empty.
+
+SocialAPI resolves the validator base address from `API_GATEWAY_URL`, then `ApiGateway:BaseUrl`, with `http://127.0.0.1:5028` as the local fallback. Configure the value as the Gateway origin; the validator appends `/comics/{id}` according to the public YARP contract.
 
 The frontend uses [frontend/.env.example](../frontend/.env.example):
 

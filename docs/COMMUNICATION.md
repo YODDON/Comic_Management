@@ -91,9 +91,9 @@ BannerAPI and PaymentAPI do not host gRPC services.
 
 ## Internal HTTP communication
 
-SocialAPI registers `IComicValidator` with an `HttpClient`. It currently defaults `API_GATEWAY_URL` to `http://localhost:5000` and requests `/api/comics/{id}`.
+SocialAPI registers `IComicValidator` with an `HttpClient`. Its base address uses `API_GATEWAY_URL`, then `ApiGateway:BaseUrl`, and finally the local Gateway fallback `http://127.0.0.1:5028`. It requests the Gateway contract `GET /comics/{id}`, which YARP rewrites to ComicAPI `GET /api/comics/{id}`.
 
-This is inconsistent with the actual Gateway development address (`5028`) and public route (`/comics/{id}`). The validator also returns `true` when an exception occurs. This is a documented current issue; it is not corrected by documentation work.
+Only a successful upstream response confirms that the comic exists. `404`, other non-success statuses, request failures, and timeouts all fail closed, so SocialAPI does not create a comment or favorite for an unvalidated comic ID. Communication failures are logged without changing the existing public SocialAPI response contracts.
 
 ## Synchronous dependency graph
 
