@@ -95,7 +95,7 @@ Select the owning service project and ensure its connection string is available.
 dotnet tool install --global dotnet-ef --version 8.*
 ```
 
-User, Chapter, Mission, Payment, Wallet, and Banner currently call `Migrate()` at startup. Comic and Social use `EnsureCreated()`. See [DATABASE.md](DATABASE.md).
+User, Chapter, Social, Mission, Payment, Wallet, and Banner currently call `Migrate()` at startup. ComicAPI remains **TRANSITIONAL** on `EnsureCreated()` because its runtime model has unresolved drift from its migration history. Do not apply or generate a ComicAPI migration until the data-preserving GUID-to-integer owner mapping or explicit disposable-database strategy described in [DATABASE.md](DATABASE.md) is approved.
 
 ## Run the backend and full system
 
@@ -186,7 +186,7 @@ When automated test projects/scripts are introduced, this file must become the c
 
 - Verify that the SQL container is running and port 1433 is available.
 - Verify the service-specific connection variable; committed fallback values are empty.
-- Account for the migration-strategy difference between Comic/Social and the other services.
+- Account for ComicAPI's transitional `EnsureCreated()` strategy; the other seven business services use `Migrate()`.
 
 ### Gateway returns 502/503
 
