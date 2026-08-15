@@ -98,10 +98,26 @@ There is no distributed transaction. Stable references and unique keys reduce du
 
 Migrations live in each owning service project. Current startup behavior is:
 
-- `Database.Migrate()`: UserAPI, ChapterAPI, MissionAPI, PaymentAPI, WalletAPI, and BannerAPI.
-- `Database.EnsureCreated()`: ComicAPI and SocialAPI.
+- `Database.Migrate()`: UserAPI, ChapterAPI, SocialAPI, MissionAPI, PaymentAPI, WalletAPI, and BannerAPI.
+- `Database.EnsureCreated()`: ComicAPI only.
 
-This is a current inconsistency. `EnsureCreated()` does not apply migration history in the same way as `Migrate()` and may produce schema differences between environments. This document records the current state; it does not recommend treating `EnsureCreated()` as a migration strategy.
+SocialAPI's runtime model has no pending changes relative to its migration snapshot, so startup now applies its owned migrations. No Social schema or migration was changed during this standardization.
+
+ComicAPI migration startup is **TRANSITIONAL** and blocked by existing schema drift:
+
+- Existing migration/schema: `Comics.OwnerId` is `uniqueidentifier`.
+- Runtime model: `Comic.OwnerId` is `int`.
+- The existing migration uses `Outstandings`.
+- The runtime model maps `Outstanding`.
+- Dynamic category seed timestamps cause repeated model/snapshot drift.
+- EF Core reports pending model changes.
+
+ComicAPI therefore continues to call `EnsureCreated()` in the current runtime. Resolving this requires a separate, explicitly approved migration task. That task must first select one of these strategies without assuming either one:
+
+1. Define a valid GUID-to-UserAPI-integer-ID mapping and migrate existing data safely.
+2. Explicitly confirm that Comic DB is disposable and may be recreated from scratch.
+
+Until that decision is approved, do not generate/apply a ComicAPI migration, change `OwnerId`, rename either outstanding table mapping, or rewrite seed/migration history as part of unrelated work.
 
 Service-specific connection variables are listed in [DEVELOPMENT.md](DEVELOPMENT.md). Committed `appsettings.json` connection-string values are empty, so runtime environments must supply real values.
 

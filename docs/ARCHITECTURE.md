@@ -240,7 +240,7 @@ This section classifies current limitations; it is not a migration backlog.
 | Category | Current limitation | Main risk | Canonical detail/change owner |
 |---|---|---|---|
 | Security / correctness | JWT issuer/audience validation is not configured consistently across services | Authentication behavior can differ by route/service | This document and [CONVENTIONS.md](CONVENTIONS.md); Gateway and affected APIs |
-| Data / persistence | Startup mixes `Migrate()` and `EnsureCreated()` | Schema evolution can differ between services/environments | [DATABASE.md](DATABASE.md) |
+| Data / persistence | ComicAPI startup remains **TRANSITIONAL** on `EnsureCreated()` because `OwnerId`, outstanding-table naming, and dynamic seed metadata drift from its migration snapshot | Comic schema evolution cannot safely use migrations until an explicit data-mapping or disposable-database strategy is approved | [DATABASE.md](DATABASE.md) |
 | Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Reliability | Payment → Wallet → Chapter purchase orchestration can partially succeed; refund is best effort | Balance, payment record, and entitlement may require reconciliation | [DATABASE.md](DATABASE.md) and [COMMUNICATION.md](COMMUNICATION.md) |
 | Reliability | Mission reward depends on synchronous Wallet credit and has no durable retry | A timeout/failure can leave reward state incomplete | [COMMUNICATION.md](COMMUNICATION.md) |
