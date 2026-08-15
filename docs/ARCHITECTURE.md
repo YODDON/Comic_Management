@@ -207,7 +207,7 @@ If wallet credit fails, the transaction remains pending so the webhook can be re
 
 - SocialAPI owns comments, favorites, follows, and reading history.
 - Comments support one parent/replies relationship.
-- Comment creation validates the comic through an HTTP `ComicValidator`, then notifies MissionAPI through gRPC.
+- Comment creation validates the comic through the Gateway's public `GET /comics/{id}` route, then notifies MissionAPI through gRPC. Validation fails closed when the Gateway or ComicAPI cannot return a successful response.
 - Favorite, follow, and reading-history records have composite unique constraints.
 
 ### Translation
@@ -239,7 +239,6 @@ This section classifies current limitations; it is not a migration backlog.
 
 | Category | Current limitation | Main risk | Canonical detail/change owner |
 |---|---|---|---|
-| Security / correctness | SocialAPI `ComicValidator` uses a default URL/path that does not match Gateway and returns `true` on exceptions | Invalid comic references may pass validation when the dependency fails | [COMMUNICATION.md](COMMUNICATION.md); SocialAPI implementation |
 | Security / correctness | JWT issuer/audience validation is not configured consistently across services | Authentication behavior can differ by route/service | This document and [CONVENTIONS.md](CONVENTIONS.md); Gateway and affected APIs |
 | Data / persistence | Startup mixes `Migrate()` and `EnsureCreated()` | Schema evolution can differ between services/environments | [DATABASE.md](DATABASE.md) |
 | Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |

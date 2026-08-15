@@ -1,6 +1,4 @@
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
+using System.Net;
 using SocialAPI.Interfaces;
 
 namespace SocialAPI.Services
@@ -8,26 +6,43 @@ namespace SocialAPI.Services
     public class ComicValidator : IComicValidator
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<ComicValidator> _logger;
 
-        public ComicValidator(HttpClient httpClient)
+        public ComicValidator(HttpClient httpClient, ILogger<ComicValidator> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
 
         public async Task<bool> ExistsAsync(Guid comicId)
         {
             try
             {
-                // This is a placeholder for the actual API call to ComicAPI or ApiGateway
-                // Assuming ApiGateway routes /api/comics/{id} to ComicAPI
-                var response = await _httpClient.GetAsync($"/api/comics/{comicId}");
-                return response.IsSuccessStatusCode;
+                using var response = await _httpClient.GetAsync($"/comics/{comicId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+
+                if (response.StatusCode != HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning(
+                        "Comic validation failed for {ComicId} with upstream status {StatusCode}",
+                        comicId,
+                        (int)response.StatusCode);
+                }
+
+                return false;
             }
-            catch
+            catch (HttpRequestException exception)
             {
-                // If the service is unreachable, we can choose to fail or assume it doesn't exist.
-                // For now, let's return false or we can return true in dev to not block testing.
-                return true; // Temporarily return true for testing without ComicAPI
+                _logger.LogWarning(exception, "Comic validation request failed for {ComicId}", comicId);
+                return false;
+            }
+            catch (TaskCanceledException exception)
+            {
+                _logger.LogWarning(exception, "Comic validation request timed out for {ComicId}", comicId);
+                return false;
             }
         }
     }

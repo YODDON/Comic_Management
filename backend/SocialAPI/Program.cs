@@ -21,7 +21,16 @@ if (!string.IsNullOrEmpty(socialConn))
 
 builder.Services.AddHttpClient<IComicValidator, ComicValidator>(client =>
 {
-    var apiGatewayUrl = Environment.GetEnvironmentVariable("API_GATEWAY_URL") ?? "http://localhost:5000";
+    var apiGatewayUrl = Environment.GetEnvironmentVariable("API_GATEWAY_URL");
+    if (string.IsNullOrWhiteSpace(apiGatewayUrl))
+    {
+        apiGatewayUrl = builder.Configuration["ApiGateway:BaseUrl"];
+    }
+    if (string.IsNullOrWhiteSpace(apiGatewayUrl))
+    {
+        apiGatewayUrl = "http://127.0.0.1:5028";
+    }
+
     client.BaseAddress = new Uri(apiGatewayUrl);
 });
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();

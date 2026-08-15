@@ -107,10 +107,8 @@ The `UserPurchase` entity here is an entitlement projection/local record. Paymen
 - **gRPC provided:** `SocialActivity.GetUserActivities` for MissionAPI snapshot synchronization.
 - **gRPC consumed:** `MissionProgress.RecordActivity` for comment/read activity notification.
 - **Events published/consumed:** none.
-- **External integrations:** an HTTP `ComicValidator` intended to validate comic IDs through an API endpoint.
+- **External integrations:** an HTTP `ComicValidator` that validates comic IDs through Gateway `GET /comics/{id}` and fails closed on upstream failure.
 - **Dependencies:** MissionAPI; ComicAPI indirectly through the HTTP validator.
-
-Current limitation: the validator's default base URL/path is inconsistent with the current Gateway configuration and returns success on exceptions.
 
 ## MissionAPI
 
