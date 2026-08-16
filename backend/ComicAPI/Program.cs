@@ -17,6 +17,13 @@ if (!string.IsNullOrEmpty(comicConn))
     builder.Services.AddDbContext<ComicDbContext>(options => options.UseSqlServer(comicConn));
 }
 
+var redisConn = Environment.GetEnvironmentVariable("REDIS_CONNECTION") ?? builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379";
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConn;
+    options.InstanceName = "ComicAPI_";
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

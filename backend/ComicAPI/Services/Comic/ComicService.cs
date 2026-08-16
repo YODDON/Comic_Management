@@ -7,8 +7,10 @@ using ComicAPI.DTOs;
 using ComicAPI.Entities;
 using ComicAPI.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using SharedKernel.Responses;
+using System.Text.Json;
 using UserAPI.Protos;
 using SharedKernel.Enums;
 using ChapterAPI.Protos;
@@ -22,19 +24,22 @@ namespace ComicAPI.Services
         private readonly UserService.UserServiceClient _userServiceClient;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly ChapterGrpc.ChapterGrpcClient _chapterServiceClient;
+        private readonly IDistributedCache _cache;
 
         public ComicService(
             IComicRepository comicRepository,
             IMapper mapper,
             UserService.UserServiceClient userServiceClient,
             ICloudinaryService cloudinaryService,
-            ChapterGrpc.ChapterGrpcClient chapterServiceClient)
+            ChapterGrpc.ChapterGrpcClient chapterServiceClient,
+            IDistributedCache cache)
         {
             _comicRepository = comicRepository;
             _mapper = mapper;
             _userServiceClient = userServiceClient;
             _cloudinaryService = cloudinaryService;
             _chapterServiceClient = chapterServiceClient;
+            _cache = cache;
         }
 
         public async Task<ApiResponse<PagedResult<ComicSummaryDto>>> GetComicsAsync(int pageNumber, int pageSize, string? search, List<Guid>? categoryIds, ComicStatus? status)
@@ -58,9 +63,22 @@ namespace ComicAPI.Services
         {
             if (limit <= 0) limit = 10;
             if (limit > 50) limit = 50;
+            
+            string cacheKey = $"HotComics_{limit}";
+            var cachedData = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                var cachedDtos = JsonSerializer.Deserialize<List<ComicSummaryDto>>(cachedData);
+                if (cachedDtos != null) return new ApiResponse<List<ComicSummaryDto>>(cachedDtos, "Hot comics retrieved from cache.", 200);
+            }
+
             var comics = await _comicRepository.GetHotComicsAsync(limit);
             var dtos = _mapper.Map<List<ComicSummaryDto>>(comics);
             await EnrichComicsWithAuthorNamesAsync(dtos, comics);
+            
+            var serializedDtos = JsonSerializer.Serialize(dtos);
+            await _cache.SetStringAsync(cacheKey, serializedDtos, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+
             return new ApiResponse<List<ComicSummaryDto>>(dtos, "Hot comics retrieved.", 200);
         }
 
@@ -87,9 +105,22 @@ namespace ComicAPI.Services
         {
             if (limit <= 0) limit = 10;
             if (limit > 50) limit = 50;
+            
+            string cacheKey = $"OutstandingComics_{limit}";
+            var cachedData = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                var cachedDtos = JsonSerializer.Deserialize<List<ComicSummaryDto>>(cachedData);
+                if (cachedDtos != null) return new ApiResponse<List<ComicSummaryDto>>(cachedDtos, "Outstanding comics retrieved from cache.", 200);
+            }
+
             var comics = await _comicRepository.GetOutstandingComicsAsync(limit);
             var dtos = _mapper.Map<List<ComicSummaryDto>>(comics);
             await EnrichComicsWithAuthorNamesAsync(dtos, comics);
+            
+            var serializedDtos = JsonSerializer.Serialize(dtos);
+            await _cache.SetStringAsync(cacheKey, serializedDtos, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+
             return new ApiResponse<List<ComicSummaryDto>>(dtos, "Outstanding comics retrieved.", 200);
         }
 
@@ -121,9 +152,22 @@ namespace ComicAPI.Services
         {
             if (limit <= 0) limit = 10;
             if (limit > 50) limit = 50;
+            
+            string cacheKey = $"LastCompletedComics_{limit}";
+            var cachedData = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                var cachedDtos = JsonSerializer.Deserialize<List<ComicSummaryDto>>(cachedData);
+                if (cachedDtos != null) return new ApiResponse<List<ComicSummaryDto>>(cachedDtos, "Last completed comics retrieved from cache.", 200);
+            }
+
             var comics = await _comicRepository.GetLastCompletedComicsAsync(limit);
             var dtos = _mapper.Map<List<ComicSummaryDto>>(comics);
             await EnrichComicsWithAuthorNamesAsync(dtos, comics);
+            
+            var serializedDtos = JsonSerializer.Serialize(dtos);
+            await _cache.SetStringAsync(cacheKey, serializedDtos, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+
             return new ApiResponse<List<ComicSummaryDto>>(dtos, "Last completed comics retrieved.", 200);
         }
 

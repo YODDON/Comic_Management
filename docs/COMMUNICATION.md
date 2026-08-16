@@ -10,7 +10,7 @@ This document is the canonical map of current inter-component communication.
 | Internal gRPC | IMPLEMENTED | Synchronous queries and commands between APIs |
 | Internal HTTP client | IMPLEMENTED in one place | SocialAPI comic validation |
 | RabbitMQ integration events | NOT IMPLEMENTED | Container exists only |
-| Redis cache | NOT IMPLEMENTED | Container exists only |
+| Redis cache | IMPLEMENTED in ComicAPI | Caching heavily accessed comic lists |
 
 ## Frontend → Gateway → REST APIs
 

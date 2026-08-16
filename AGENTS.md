@@ -20,7 +20,7 @@ Before changing code:
 
 ## Git Branch and Integration Workflow
 
-For coding tasks that will be committed and integrated:
+For coding tasks that will be committed and integrated, **the AI Agent must autonomously execute the required Git commands** (creating branches, committing, and merging to `dev`) using the terminal tool when appropriate, rather than expecting the user to perform these actions manually.
 
 ### Before editing
 
