@@ -99,15 +99,11 @@ Notable folders:
 
 ### ComicAPI
 
-Notable folders:
-
-- `Controllers/`: comics, categories, and translation endpoints.
-- `Services/Comic`, `Services/Category`: catalog use cases.
-- `GrpcServices/ComicGrpcService.cs`: Comic gRPC server adapter.
-- `Services/CloudinaryService.cs`, `Services/N8nTranslationService.cs`: external integrations in the same project.
-- `Repositories/Comic`, `Repositories/Category`: persistence.
-- `Mappings/`: comic/category AutoMapper profiles.
-- `Protos/`: User and Chapter clients plus Comic server contract.
+**Note**: `ComicAPI` has been migrated to a Clean Architecture structure:
+- `ComicAPI.Domain`: Core entities and interfaces.
+- `ComicAPI.Application`: Application services, DTOs, Mapping profiles, and Client Protos (`user.proto`, `chapter.proto`).
+- `ComicAPI.Infrastructure`: DbContext, EF Migrations, Repositories implementations, and external service implementations (Cloudinary, N8n).
+- `ComicAPI.API`: Controllers, Server Protos (`comic.proto`), gRPC server adapter, DI composition root.
 
 ### ChapterAPI
 

@@ -64,16 +64,17 @@ Do not reference another service's classes/repositories through a project refere
 Status: Transitional
 
 Context:
-Each microservice is currently one ASP.NET Core project containing Controllers, Services, Interfaces, Repositories, Data, Entities, and integration-specific folders.
+Each microservice is generally one ASP.NET Core project containing Controllers, Services, Interfaces, Repositories, Data, Entities, and integration-specific folders.
 
 Decision:
 The current architecture keeps a boundary at the service/project level and uses the logical dependency path `Controller/gRPC adapter → Service → Repository → DbContext`.
+*Note: ComicAPI has successfully migrated to a four-project Clean Architecture (`.API`, `.Application`, `.Domain`, `.Infrastructure`).*
 
 Reason:
-Reason inferred from current architecture: the structure is direct for the current codebase and avoids creating many subprojects.
+Reason inferred from current architecture: the structure is direct for the current codebase and avoids creating many subprojects. Clean Architecture is being adopted incrementally.
 
 Consequences:
-The compiler does not enforce Domain/Application/Infrastructure boundaries. Clean Architecture, DDD, and CQRS are not general implemented architecture.
+The compiler does not enforce Domain/Application/Infrastructure boundaries for most services. Clean Architecture, DDD, and CQRS are not general implemented architecture except for `ComicAPI`.
 
 Supersession condition:
 This decision remains authoritative for `CURRENT` code until an approved per-service architecture migration is actually implemented. When a service is separated into API/Application/Domain/Infrastructure boundaries, update this ADR together with `PROJECT_STRUCTURE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`, and affected service documentation in that migration task. A service is not considered migrated until source code and project references enforce the new dependencies.
