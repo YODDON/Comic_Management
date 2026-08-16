@@ -36,11 +36,11 @@ namespace ComicAPI.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Slug = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OwnerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OwnerId = table.Column<int>(type: "int", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ThumbnailUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Author = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     SalaryType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ViewCount = table.Column<int>(type: "int", nullable: false),
@@ -80,7 +80,7 @@ namespace ComicAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Outstandings",
+                name: "Outstanding",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -93,9 +93,9 @@ namespace ComicAPI.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Outstandings", x => x.Id);
+                    table.PrimaryKey("PK_Outstanding", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Outstandings_Comics_ComicId",
+                        name: "FK_Outstanding_Comics_ComicId",
                         column: x => x.ComicId,
                         principalTable: "Comics",
                         principalColumn: "Id",
@@ -107,14 +107,14 @@ namespace ComicAPI.Migrations
                 columns: new[] { "Id", "CreatedAt", "Name", "Slug", "Tag", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4215), "Action", "action", "Action-packed comics", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4216) },
-                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4222), "Romance", "romance", "Romantic stories", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4222) },
-                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4225), "Comedy", "comedy", "Funny and hilarious", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4225) },
-                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4227), "Fantasy", "fantasy", "Magical worlds", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4228) },
-                    { new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4230), "Horror", "horror", "Scary and thrilling", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4230) },
-                    { new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4232), "Sci-Fi", "sci-fi", "Science fiction", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4233) },
-                    { new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4235), "Slice of Life", "slice-of-life", "Everyday life", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4236) },
-                    { new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4243), "Drama", "drama", "Emotional and dramatic", new DateTime(2026, 7, 2, 13, 22, 7, 171, DateTimeKind.Utc).AddTicks(4244) }
+                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8583), "Action", "action", "Action-packed comics", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8583) },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8591), "Romance", "romance", "Romantic stories", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8591) },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8594), "Comedy", "comedy", "Funny and hilarious", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8594) },
+                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8597), "Fantasy", "fantasy", "Magical worlds", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8597) },
+                    { new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8600), "Horror", "horror", "Scary and thrilling", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8601) },
+                    { new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8603), "Sci-Fi", "sci-fi", "Science fiction", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8603) },
+                    { new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8605), "Slice of Life", "slice-of-life", "Everyday life", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8606) },
+                    { new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8624), "Drama", "drama", "Emotional and dramatic", new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8624) }
                 });
 
             migrationBuilder.CreateIndex(
@@ -128,8 +128,8 @@ namespace ComicAPI.Migrations
                 column: "ComicId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Outstandings_ComicId",
-                table: "Outstandings",
+                name: "IX_Outstanding_ComicId",
+                table: "Outstanding",
                 column: "ComicId");
         }
 
@@ -140,7 +140,7 @@ namespace ComicAPI.Migrations
                 name: "ComicCategories");
 
             migrationBuilder.DropTable(
-                name: "Outstandings");
+                name: "Outstanding");
 
             migrationBuilder.DropTable(
                 name: "Categories");

@@ -54,74 +54,74 @@ namespace ComicAPI.Migrations
                         new
                         {
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8975),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8583),
                             Name = "Action",
                             Slug = "action",
                             Tag = "Action-packed comics",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8975)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8583)
                         },
                         new
                         {
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8985),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8591),
                             Name = "Romance",
                             Slug = "romance",
                             Tag = "Romantic stories",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8986)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8591)
                         },
                         new
                         {
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8991),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8594),
                             Name = "Comedy",
                             Slug = "comedy",
                             Tag = "Funny and hilarious",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8992)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8594)
                         },
                         new
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8996),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8597),
                             Name = "Fantasy",
                             Slug = "fantasy",
                             Tag = "Magical worlds",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(8997)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8597)
                         },
                         new
                         {
                             Id = new Guid("55555555-5555-5555-5555-555555555555"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9004),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8600),
                             Name = "Horror",
                             Slug = "horror",
                             Tag = "Scary and thrilling",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9004)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8601)
                         },
                         new
                         {
                             Id = new Guid("66666666-6666-6666-6666-666666666666"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9010),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8603),
                             Name = "Sci-Fi",
                             Slug = "sci-fi",
                             Tag = "Science fiction",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9010)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8603)
                         },
                         new
                         {
                             Id = new Guid("77777777-7777-7777-7777-777777777777"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9015),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8605),
                             Name = "Slice of Life",
                             Slug = "slice-of-life",
                             Tag = "Everyday life",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9016)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8606)
                         },
                         new
                         {
                             Id = new Guid("88888888-8888-8888-8888-888888888888"),
-                            CreatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9031),
+                            CreatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8624),
                             Name = "Drama",
                             Slug = "drama",
                             Tag = "Emotional and dramatic",
-                            UpdatedAt = new DateTime(2026, 7, 3, 7, 3, 4, 565, DateTimeKind.Utc).AddTicks(9031)
+                            UpdatedAt = new DateTime(2026, 8, 16, 12, 31, 31, 321, DateTimeKind.Utc).AddTicks(8624)
                         });
                 });
 
@@ -142,8 +142,8 @@ namespace ComicAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("SalaryType")
                         .IsRequired()
@@ -235,7 +235,7 @@ namespace ComicAPI.Migrations
 
                     b.HasIndex("ComicId");
 
-                    b.ToTable("Outstandings");
+                    b.ToTable("Outstanding", (string)null);
                 });
 
             modelBuilder.Entity("ComicAPI.Entities.ComicCategory", b =>
