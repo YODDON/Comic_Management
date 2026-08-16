@@ -23,5 +23,7 @@ namespace MissionAPI.Interfaces
             MissionType type,
             Guid activityId,
             DateTime occurredAt);
+            
+        Task SaveChangesAsync();
     }
 }

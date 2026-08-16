@@ -4,6 +4,7 @@ using WalletAPI.Interfaces;
 using WalletAPI.Repositories;
 using WalletAPI.Services;
 using SharedKernel.Extensions;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,15 +22,42 @@ builder.Services.AddScoped<IWithdrawService, WithdrawService>();
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IWalletApplicationService, WalletApplicationService>();
 
-var walletConn = Environment.GetEnvironmentVariable("WALLET_DB_CONNECTION")
-    ?? builder.Configuration.GetConnectionString("WalletConnection")
-    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+var walletConn = Environment.GetEnvironmentVariable("WALLET_DB_CONNECTION");
+if (string.IsNullOrEmpty(walletConn)) walletConn = builder.Configuration.GetConnectionString("WalletConnection");
+if (string.IsNullOrEmpty(walletConn)) walletConn = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(walletConn)) walletConn = "Server=localhost,1433;Database=WalletDB;User Id=sa;Password=Your_password123;TrustServerCertificate=True;";
+
 if (!string.IsNullOrEmpty(walletConn))
 {
     builder.Services.AddDbContext<WalletDbContext>(options => options.UseSqlServer(walletConn));
 }
 
 builder.Services.AddCustomJwtAuthentication(builder.Configuration);
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddEntityFrameworkOutbox<WalletDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
+    x.AddConsumer<WalletAPI.Consumers.MissionRewardGrantedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitmqHost, "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("mission-reward-granted", e =>
+        {
+            e.ConfigureConsumer<WalletAPI.Consumers.MissionRewardGrantedConsumer>(context);
+        });
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

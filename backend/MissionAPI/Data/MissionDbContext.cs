@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MissionAPI.Entities;
+using MassTransit;
 
 namespace MissionAPI.Data
 {
@@ -17,6 +18,10 @@ namespace MissionAPI.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Mission>()

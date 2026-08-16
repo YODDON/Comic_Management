@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using WalletAPI.Data;
+using MissionAPI.Data;
 
 #nullable disable
 
-namespace WalletAPI.Migrations
+namespace MissionAPI.Migrations
 {
-    [DbContext(typeof(WalletDbContext))]
-    partial class WalletDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(MissionDbContext))]
+    [Migration("20260816130150_AddOutboxPattern")]
+    partial class AddOutboxPattern
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -192,60 +195,105 @@ namespace WalletAPI.Migrations
                     b.ToTable("OutboxState");
                 });
 
-            modelBuilder.Entity("WalletAPI.Entities.CurrencyEntry", b =>
+            modelBuilder.Entity("MissionAPI.Entities.Mission", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("ReferenceId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("RewardCoin")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TargetCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ReferenceId")
-                        .IsUnique()
-                        .HasFilter("[ReferenceId] IS NOT NULL");
+                    b.ToTable("Missions");
 
-                    b.HasIndex("WalletId");
-
-                    b.ToTable("CurrencyEntries");
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đọc ít nhất 5 chương truyện bất kỳ.",
+                            IsActive = true,
+                            RewardCoin = 50m,
+                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TargetCount = 5,
+                            Title = "Đọc Truyện Chăm Chỉ",
+                            Type = "ReadChapter"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Nạp ít nhất 50.000 VNĐ vào ví.",
+                            IsActive = true,
+                            RewardCoin = 200m,
+                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TargetCount = 1,
+                            Title = "Đại Gia Nạp Lần Đầu",
+                            Type = "PurchaseChapter"
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bình luận ít nhất 3 lần vào các chương truyện.",
+                            IsActive = true,
+                            RewardCoin = 30m,
+                            StartDate = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TargetCount = 3,
+                            Title = "Nhà Phê Bình Bàn Phím",
+                            Type = "LeaveComment"
+                        });
                 });
 
-            modelBuilder.Entity("WalletAPI.Entities.Wallet", b =>
+            modelBuilder.Entity("MissionAPI.Entities.MissionActivity", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Balance")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<Guid>("ActivityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("OccurredAt")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -256,66 +304,118 @@ namespace WalletAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
+                    b.HasIndex("MissionId");
+
+                    b.HasIndex("UserId", "MissionId", "ActivityId")
                         .IsUnique();
 
-                    b.ToTable("Wallets");
+                    b.ToTable("MissionActivities");
                 });
 
-            modelBuilder.Entity("WalletAPI.Entities.Withdraw", b =>
+            modelBuilder.Entity("MissionAPI.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AccountName")
+                    b.Property<string>("Body")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("BankAccount")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("BankName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Note")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("Status")
+                    b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("WalletId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WalletId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Withdraws_WalletId_Pending")
-                        .HasFilter("[Status] = 'Pending'");
+                    b.ToTable("Notifications");
+                });
 
-                    b.ToTable("Withdraws");
+            modelBuilder.Entity("MissionAPI.Entities.Upload", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Uploads");
+                });
+
+            modelBuilder.Entity("MissionAPI.Entities.UserMission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentProgress")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("MissionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MissionId");
+
+                    b.HasIndex("UserId", "MissionId")
+                        .IsUnique();
+
+                    b.ToTable("UserMissions");
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
@@ -330,33 +430,31 @@ namespace WalletAPI.Migrations
                         .HasPrincipalKey("MessageId", "ConsumerId");
                 });
 
-            modelBuilder.Entity("WalletAPI.Entities.CurrencyEntry", b =>
+            modelBuilder.Entity("MissionAPI.Entities.MissionActivity", b =>
                 {
-                    b.HasOne("WalletAPI.Entities.Wallet", "Wallet")
-                        .WithMany("CurrencyEntries")
-                        .HasForeignKey("WalletId")
+                    b.HasOne("MissionAPI.Entities.Mission", "Mission")
+                        .WithMany()
+                        .HasForeignKey("MissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Wallet");
+                    b.Navigation("Mission");
                 });
 
-            modelBuilder.Entity("WalletAPI.Entities.Withdraw", b =>
+            modelBuilder.Entity("MissionAPI.Entities.UserMission", b =>
                 {
-                    b.HasOne("WalletAPI.Entities.Wallet", "Wallet")
-                        .WithMany("Withdraws")
-                        .HasForeignKey("WalletId")
+                    b.HasOne("MissionAPI.Entities.Mission", "Mission")
+                        .WithMany("UserMissions")
+                        .HasForeignKey("MissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Wallet");
+                    b.Navigation("Mission");
                 });
 
-            modelBuilder.Entity("WalletAPI.Entities.Wallet", b =>
+            modelBuilder.Entity("MissionAPI.Entities.Mission", b =>
                 {
-                    b.Navigation("CurrencyEntries");
-
-                    b.Navigation("Withdraws");
+                    b.Navigation("UserMissions");
                 });
 #pragma warning restore 612, 618
         }
