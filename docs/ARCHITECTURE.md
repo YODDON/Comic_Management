@@ -120,7 +120,7 @@ UserAPI issues JWT access tokens and refresh tokens. It supports registration, e
 
 Roles seeded by `UserDbContext` are `Admin`, `Guest`, and `Reader`. Controllers use `[Authorize]` and role restrictions. The Gateway additionally classifies routes as public or protected.
 
-Current limitation: JWT validation is not configured identically in every service. Most validate issuer/audience; PaymentAPI and MissionAPI use less strict settings. Configuration must be inspected before changing authentication behavior.
+Current behavior: JWT validation is configured identically in every service using `builder.Services.AddCustomJwtAuthentication(builder.Configuration)`. All services validate issuer and audience strictly.
 
 ## Important runtime flows
 
@@ -235,7 +235,6 @@ This section classifies current limitations; it is not a migration backlog.
 
 | Category | Current limitation | Main risk | Canonical detail/change owner |
 |---|---|---|---|
-| Security / correctness | JWT issuer/audience validation is not configured consistently across services | Authentication behavior can differ by route/service | This document and [CONVENTIONS.md](CONVENTIONS.md); Gateway and affected APIs |
 | Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Reliability | Payment → Wallet → Chapter purchase orchestration can partially succeed; refund is best effort | Balance, payment record, and entitlement may require reconciliation | [DATABASE.md](DATABASE.md) and [COMMUNICATION.md](COMMUNICATION.md) |
 | Reliability | Mission reward depends on synchronous Wallet credit and has no durable retry | A timeout/failure can leave reward state incomplete | [COMMUNICATION.md](COMMUNICATION.md) |

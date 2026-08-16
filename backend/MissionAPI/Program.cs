@@ -4,6 +4,7 @@ using ChapterAPI.Protos;
 using SocialAPI.Protos;
 using MassTransit;
 using MissionAPI.Consumers;
+using SharedKernel.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,24 +45,7 @@ builder.Services.Configure<MissionAPI.Settings.CloudinarySettings>(options =>
         ?? "";
 });
 
-var jwtSecret = Environment.GetEnvironmentVariable("JwtSettings__Secret") ?? builder.Configuration["JwtSettings:Secret"];
-if (!string.IsNullOrEmpty(jwtSecret))
-{
-    var key = System.Text.Encoding.ASCII.GetBytes(jwtSecret);
-    builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
-        .AddJwtBearer(options =>
-        {
-            options.RequireHttpsMetadata = false;
-            options.SaveToken = true;
-            options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(key),
-                ValidateIssuer = false,
-                ValidateAudience = false
-            };
-        });
-}
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
