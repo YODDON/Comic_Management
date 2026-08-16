@@ -23,10 +23,11 @@ builder.Services.Configure<ChapterAPI.Settings.CloudinarySettings>(builder.Confi
 builder.Services.AddScoped<ChapterAPI.Interfaces.ICloudinaryService, ChapterAPI.Services.CloudinaryService>();
 
 var chapterConn = Environment.GetEnvironmentVariable("CHAPTER_DB_CONNECTION") ?? builder.Configuration.GetConnectionString("ChapterConnection");
-if (!string.IsNullOrEmpty(chapterConn))
+if (string.IsNullOrEmpty(chapterConn))
 {
-    builder.Services.AddDbContext<ChapterDbContext>(options => options.UseSqlServer(chapterConn));
+    chapterConn = "Server=localhost;Database=ChapterDB;Trusted_Connection=True;TrustServerCertificate=True;";
 }
+builder.Services.AddDbContext<ChapterDbContext>(options => options.UseSqlServer(chapterConn));
 
 var comicApiUrl = Environment.GetEnvironmentVariable("COMIC_API_URL") ??
     builder.Configuration["GrpcSettings:ComicApiUrl"] ?? "https://localhost:7024";
@@ -42,6 +43,12 @@ builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddEntityFrameworkOutbox<ChapterAPI.Data.ChapterDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";

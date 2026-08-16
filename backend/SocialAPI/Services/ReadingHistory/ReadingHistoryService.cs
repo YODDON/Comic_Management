@@ -45,9 +45,9 @@ public class ReadingHistoryService : IReadingHistoryService
         item.ChapterId = request.ChapterId;
         item.ReadAt = DateTime.UtcNow;
         item.UpdatedAt = DateTime.UtcNow;
-        await _repository.SaveChangesAsync();
         await _missionProgressNotifier.RecordAsync(
             numericUserId, MissionType.ReadChapter, request.ChapterId, item.ReadAt);
+        await _repository.SaveChangesAsync();
         return Map(item);
     }
 

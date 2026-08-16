@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ChapterAPI.Entities;
+using MassTransit;
 
 namespace ChapterAPI.Data
 {
@@ -31,6 +32,10 @@ namespace ChapterAPI.Data
                 entity.HasIndex(up => new { up.UserId, up.ChapterId })
                     .IsUnique();
             });
+
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
         }
     }
 }
