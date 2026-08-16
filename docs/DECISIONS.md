@@ -100,24 +100,24 @@ gRPC contracts remain in/generated within services. Some current shared enums cr
 Do not:
 Do not turn SharedKernel into a home for shared business logic merely because multiple services have similar fields.
 
-## ADR-006 — RabbitMQ and Redis are not runtime application architecture
+## ADR-006 — RabbitMQ and Redis as runtime application architecture
 
-Status: Transitional
+Status: Accepted
 
 Context:
-Docker Compose declares RabbitMQ and Redis, but application code has no client package, publisher, consumer, cache registration, Outbox, or Inbox.
+Docker Compose declares RabbitMQ and Redis. Application code now utilizes MassTransit/RabbitMQ for Mission Progress events, and StackExchange.Redis for ComicAPI caching.
 
 Decision:
-Current documentation treats both components as available infrastructure only, not implemented application capabilities.
+Both components are implemented as application capabilities for their respective use cases. Redis handles Cache-Aside for heavy read operations, and RabbitMQ handles asynchronous integration events.
 
 Reason:
-This conclusion is directly supported by current source code.
+This conclusion is directly supported by current source code (Redis in ComicAPI, RabbitMQ in SocialAPI/ChapterAPI/MissionAPI).
 
 Consequences:
-Business communication is REST/gRPC apart from external HTTP webhooks/integrations. Documentation must not promise messaging or caching reliability that does not exist.
+System reliability and performance are improved.
 
 Do not:
-Do not document events, consumers, or active Redis caching before real implementation, configuration, and consumers exist.
+Do not document further events or caching mechanisms before real implementation, configuration, and consumers exist.
 
 ## ADR-007 — Local transactions and local idempotency; no distributed transaction
 
