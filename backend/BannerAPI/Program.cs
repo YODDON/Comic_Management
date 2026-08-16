@@ -3,6 +3,7 @@ using BannerAPI.Data;
 using BannerAPI.Interfaces;
 using BannerAPI.Repositories;
 using BannerAPI.Services;
+using SharedKernel.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,34 +23,7 @@ if (!string.IsNullOrEmpty(bannerConn))
     builder.Services.AddDbContext<BannerDbContext>(options => options.UseSqlServer(bannerConn));
 }
 
-var secretKey = Environment.GetEnvironmentVariable("JwtSettings__Secret")
-    ?? Environment.GetEnvironmentVariable("JWT_SECRET")
-    ?? builder.Configuration["JwtSettings:Secret"]
-    ?? "super_secret_key_for_development_purposes_only_replace_this!";
-var issuer = Environment.GetEnvironmentVariable("JwtSettings__Issuer")
-    ?? Environment.GetEnvironmentVariable("JWT_ISSUER")
-    ?? builder.Configuration["JwtSettings:Issuer"]
-    ?? "prn232_comic_api";
-var audience = Environment.GetEnvironmentVariable("JwtSettings__Audience")
-    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-    ?? builder.Configuration["JwtSettings:Audience"]
-    ?? "prn232_comic_api";
-
-builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(secretKey))
-        };
-    });
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

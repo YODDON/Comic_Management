@@ -1,4 +1,5 @@
 using System.Text;
+using SharedKernel.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -41,24 +42,7 @@ builder.Services.Configure<BankSettings>(builder.Configuration.GetSection(BankSe
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var secretKey = Environment.GetEnvironmentVariable("JwtSettings__Secret") ?? Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JwtSettings:Secret"];
-if (string.IsNullOrEmpty(secretKey))
-{
-    secretKey = "ThisIsASuperSecretKeyForDevelopmentOnlyAndShouldBeChangedInProduction";
-}
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey)),
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 

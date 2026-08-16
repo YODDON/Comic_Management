@@ -3,6 +3,7 @@ using ComicAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using SharedKernel.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,29 +81,7 @@ builder.Services.AddScoped<ComicAPI.Interfaces.IComicService, ComicAPI.Services.
 
 builder.Services.AddGrpc();
 
-var secretKey = Environment.GetEnvironmentVariable("JwtSettings__Secret") ?? Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JwtSettings:Secret"];
-if (string.IsNullOrEmpty(secretKey)) secretKey = "SuperSecretKeyForDevelopmentOnly123!AndItNeedsToBeAtLeast32BytesLong!";
-
-var issuer = Environment.GetEnvironmentVariable("JwtSettings__Issuer") ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JwtSettings:Issuer"];
-if (string.IsNullOrEmpty(issuer)) issuer = "prn232_comic_api";
-
-var audience = Environment.GetEnvironmentVariable("JwtSettings__Audience") ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JwtSettings:Audience"];
-if (string.IsNullOrEmpty(audience)) audience = "prn232_comic_api";
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-        };
-    });
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 

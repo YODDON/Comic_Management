@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using SharedKernel.Responses;
 using System.Text.Json;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authorization;
+using SharedKernel.Extensions;
 
 Env.TraversePath().Load();
 
@@ -14,32 +15,7 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-var secret = Environment.GetEnvironmentVariable("JwtSettings__Secret")
-    ?? Environment.GetEnvironmentVariable("JWT_SECRET")
-    ?? builder.Configuration["JwtSettings:Secret"]
-    ?? "super_secret_key_for_development_purposes_only_replace_this!";
-var issuer = Environment.GetEnvironmentVariable("JwtSettings__Issuer")
-    ?? Environment.GetEnvironmentVariable("JWT_ISSUER")
-    ?? builder.Configuration["JwtSettings:Issuer"]
-    ?? "prn232_comic_api";
-var audience = Environment.GetEnvironmentVariable("JwtSettings__Audience")
-    ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-    ?? builder.Configuration["JwtSettings:Audience"]
-    ?? "prn232_comic_api";
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
-        };
-    });
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 builder.Services.AddAuthorization();
 

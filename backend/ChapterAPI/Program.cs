@@ -3,6 +3,7 @@ using ChapterAPI.Data;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using SharedKernel.Extensions;
 using System.Text;
 using ChapterAPI.Interfaces;
 using ChapterAPI.Repositories;
@@ -51,29 +52,7 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-var secretKey = Environment.GetEnvironmentVariable("JwtSettings__Secret") ?? Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JwtSettings:Secret"];
-if (string.IsNullOrEmpty(secretKey)) secretKey = "super_secret_key_for_development_purposes_only_replace_this!";
-
-var issuer = Environment.GetEnvironmentVariable("JwtSettings__Issuer") ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JwtSettings:Issuer"];
-if (string.IsNullOrEmpty(issuer)) issuer = "prn232_comic_api";
-
-var audience = Environment.GetEnvironmentVariable("JwtSettings__Audience") ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JwtSettings:Audience"];
-if (string.IsNullOrEmpty(audience)) audience = "prn232_comic_api";
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
-        };
-    });
+builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

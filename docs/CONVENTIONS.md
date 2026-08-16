@@ -66,7 +66,7 @@ Do not rename public routes or JSON contracts merely for naming consistency unle
 
 - **REQUIRED**: backend components enforce authorization; frontend route guards are only a user-experience mechanism.
 - **CURRENT PATTERN**: JWT Bearer uses configured secret, issuer, and audience values. The Gateway authenticates at the edge, and controllers use `[Authorize]`/roles where required.
-- **CURRENT PATTERN**: issuer/audience validation is not consistent across all services. Do not treat that inconsistency as a convention.
+- **REQUIRED**: All microservices must use `builder.Services.AddCustomJwtAuthentication(builder.Configuration)` from `SharedKernel.Extensions` to ensure consistent issuer/audience validation. Do not duplicate JWT setup code.
 - **RECOMMENDED**: derive the current user ID from authenticated claims; do not trust a client-supplied `UserId` for an endpoint representing the current user.
 
 ## Configuration and secrets
