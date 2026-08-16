@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WalletAPI.Entities;
+using MassTransit;
 
 namespace WalletAPI.Data;
 
@@ -15,6 +16,10 @@ public class WalletDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
+
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<Wallet>(entity =>

@@ -105,14 +105,15 @@ The repository does not contain a shared database context or cross-database fore
 The current backend uses gRPC for internal calls that either query another service or perform a synchronous command. Examples include:
 
 - ComicAPI looking up users and chapter information.
-- MissionAPI reading Chapter/Social activity snapshots and crediting WalletAPI.
 - PaymentAPI querying/unlocking ChapterAPI and debiting/crediting WalletAPI.
 
 There are circular synchronous dependencies at service level, though ChapterAPI ↔ MissionAPI and SocialAPI ↔ MissionAPI are being decoupled via RabbitMQ events. See [COMMUNICATION.md](COMMUNICATION.md).
 
 ## Asynchronous communication
 
-**IMPLEMENTED.** Mission progress events are published by ChapterAPI/SocialAPI and consumed by MissionAPI via MassTransit and RabbitMQ.
+**IMPLEMENTED.** 
+- Mission progress events are published by ChapterAPI/SocialAPI and consumed by MissionAPI via MassTransit and RabbitMQ.
+- Mission reward events are published by MissionAPI and consumed by WalletAPI via MassTransit and RabbitMQ.
 
 ## Authentication and authorization
 
@@ -197,7 +198,7 @@ If wallet credit fails, the transaction remains pending so the webhook can be re
 - ChapterAPI and SocialAPI publish MissionActivityRecordedEvent asynchronously via RabbitMQ, using the MassTransit Entity Framework Core Outbox pattern for guaranteed delivery.
 - MissionAPI also calls ChapterAPI and SocialAPI to synchronize historical activity snapshots.
 - `MissionActivity` has a unique `(UserId, MissionId, ActivityId)` index to prevent duplicate counting.
-- Completing a mission calls WalletAPI synchronously with a mission/user-derived reference so wallet credit can be deduplicated.
+- Completing a mission publishes a `MissionRewardGrantedEvent` asynchronously via RabbitMQ so wallet credit can be processed and deduplicated safely using the Outbox pattern.
 
 ### Comment/social activity
 
@@ -237,7 +238,6 @@ This section classifies current limitations; it is not a migration backlog.
 |---|---|---|---|
 | Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Reliability | Payment → Wallet → Chapter purchase orchestration can partially succeed; refund is best effort | Balance, payment record, and entitlement may require reconciliation | [DATABASE.md](DATABASE.md) and [COMMUNICATION.md](COMMUNICATION.md) |
-| Reliability | Mission reward depends on synchronous Wallet credit and has no durable retry | A timeout/failure can leave reward state incomplete | [COMMUNICATION.md](COMMUNICATION.md) |
 | Reliability | No Saga or persisted cross-service purchase state machine. (RabbitMQ events use Outbox pattern) | Cross-service gRPC delivery is not durable or exactly-once | [COMMUNICATION.md](COMMUNICATION.md) and [DECISIONS.md](DECISIONS.md) |
 | Coupling | ComicAPI ↔ ChapterAPI forms synchronous cycles | Availability and deployment coupling | [COMMUNICATION.md](COMMUNICATION.md) |
 | Verification | No automated test project is committed | Critical flows rely on build/manual verification | [DEVELOPMENT.md](DEVELOPMENT.md) |

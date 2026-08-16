@@ -7,22 +7,24 @@ using MissionAPI.Entities;
 using MissionAPI.Interfaces;
 using SharedKernel.Enums;
 using SharedKernel.Responses;
+using SharedKernel.Events;
+using MassTransit;
 
 namespace MissionAPI.Services
 {
     public class MissionService : IMissionService
     {
         private readonly IMissionRepository _missionRepository;
-        private readonly IWalletGrpcClient _walletGrpcClient;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly IMissionActivitySyncService _activitySyncService;
 
         public MissionService(
             IMissionRepository missionRepository,
-            IWalletGrpcClient walletGrpcClient,
+            IPublishEndpoint publishEndpoint,
             IMissionActivitySyncService activitySyncService)
         {
             _missionRepository = missionRepository;
-            _walletGrpcClient = walletGrpcClient;
+            _publishEndpoint = publishEndpoint;
             _activitySyncService = activitySyncService;
         }
 
@@ -215,18 +217,23 @@ namespace MissionAPI.Services
                 return ApiResponse<UserMissionDto>.ErrorResponse("Bạn chưa hoàn thành nhiệm vụ.", 400);
             }
 
-            var rewarded = await _walletGrpcClient.AddCoinAsync(
-                userId, mission.RewardCoin, CreateRewardReference(userId, mission.Id), $"Mission reward: {mission.Title}");
-            if (!rewarded)
-            {
-                return ApiResponse<UserMissionDto>.ErrorResponse("Không thể cộng phần thưởng vào ví. Vui lòng thử lại.", 503);
-            }
-
             userMission.CurrentProgress = mission.TargetCount;
             userMission.IsCompleted = true;
             userMission.CompletedAt = DateTime.UtcNow;
             userMission.UpdatedAt = DateTime.UtcNow;
+            
             await _missionRepository.UpdateUserMissionAsync(userMission);
+
+            await _publishEndpoint.Publish(new MissionRewardGrantedEvent
+            {
+                UserId = userId,
+                CoinAmount = mission.RewardCoin,
+                ReferenceId = CreateRewardReference(userId, mission.Id),
+                Description = $"Mission reward: {mission.Title}",
+                OccurredAt = DateTime.UtcNow
+            });
+
+            await _missionRepository.SaveChangesAsync();
 
             var dto = new UserMissionDto
             {

@@ -14,7 +14,9 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddControllers();
 builder.Services.AddGrpc();
 
-var missionConn = Environment.GetEnvironmentVariable("MISSION_DB_CONNECTION") ?? builder.Configuration.GetConnectionString("MissionConnection");
+var missionConn = Environment.GetEnvironmentVariable("MISSION_DB_CONNECTION") 
+    ?? builder.Configuration.GetConnectionString("MissionConnection")
+    ?? "Server=localhost,1433;Database=MissionDB;User Id=sa;Password=Your_password123;TrustServerCertificate=True;";
 if (!string.IsNullOrEmpty(missionConn))
 {
     builder.Services.AddDbContext<MissionDbContext>(options => options.UseSqlServer(missionConn));
@@ -49,6 +51,12 @@ builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddEntityFrameworkOutbox<MissionDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
     x.AddConsumer<MissionActivityRecordedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>

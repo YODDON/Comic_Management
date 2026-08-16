@@ -72,9 +72,14 @@ namespace MissionAPI.Repositories
             return userMission;
         }
 
-        public async Task UpdateUserMissionAsync(UserMission userMission)
+        public Task UpdateUserMissionAsync(UserMission userMission)
         {
             _context.UserMissions.Update(userMission);
+            return Task.CompletedTask;
+        }
+        
+        public async Task SaveChangesAsync()
+        {
             await _context.SaveChangesAsync();
         }
 

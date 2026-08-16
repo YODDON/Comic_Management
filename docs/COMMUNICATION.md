@@ -70,7 +70,6 @@ Proto files are duplicated between providers and consumers. Changes must keep al
 | SocialAPI | MissionAPI | gRPC | Notification implemented synchronously | `mission_progress.proto`: `RecordActivity` | Record comment/read activity | Current service waits for MissionAPI |
 | MissionAPI | ChapterAPI | gRPC | Query | `chapter_activity.proto`: `GetUserPurchaseActivities` | Reconstruct/synchronize purchase activity | Mission synchronization requests a snapshot |
 | MissionAPI | SocialAPI | gRPC | Query | `social_activity.proto`: `GetUserActivities` | Reconstruct read/comment activity | Mission synchronization requests a snapshot |
-| MissionAPI | WalletAPI | gRPC | Command requiring immediate result | `wallet.proto`: `AddCoin` | Credit mission reward | Completion currently needs a direct success result |
 | PaymentAPI | ChapterAPI | gRPC | Query / command requiring result | `chapter.proto`: `GetChapterInfo`, `UnlockChapter`, `IsChapterPurchased` | Price/status lookup and entitlement | Purchase decision and response depend on result |
 | PaymentAPI | WalletAPI | gRPC | Command requiring immediate result | `wallet.proto`: `DebitCoin`, `AddCoin` | Purchase debit, deposit credit, purchase refund | Balance/failure result is required by current flow |
 
@@ -106,7 +105,6 @@ flowchart LR
     Social --> Mission
     Mission --> Chapter
     Mission --> Social
-    Mission --> Wallet
     Payment --> Chapter
     Payment --> Wallet
     Social -. HTTP validator .-> Comic
@@ -134,6 +132,7 @@ The following events are currently implemented via MassTransit:
 | Publisher | Event | Consumer | Exchange | Routing / Queue | Purpose |
 |---|---|---|---|---|---|
 | SocialAPI / ChapterAPI | `MissionActivityRecordedEvent` | MissionAPI | `SharedKernel.Events:MissionActivityRecordedEvent` | `mission-activity-recorded` | Notify MissionAPI of user activities asynchronously |
+| MissionAPI | `MissionRewardGrantedEvent` | WalletAPI | `SharedKernel.Events:MissionRewardGrantedEvent` | `mission-reward-granted` | Credit mission reward asynchronously via Outbox pattern |
 
 
 ## Reliability characteristics
@@ -144,7 +143,7 @@ The following events are currently implemented via MassTransit:
 | Deposit webhook | Pending-state check + wallet reference based on payment transaction ID | Payment completion follows synchronous wallet call; no Outbox |
 | Chapter purchase | PaymentDB local transaction + Wallet gRPC + Chapter gRPC + best-effort refund | Process/network failure can leave cross-service partial state |
 | Mission activity | Unique mission-activity index | Synchronous notification/snapshot calls; no queue retry |
-| Mission reward | Wallet idempotency reference | Synchronous call; no durable retry queue |
+| Mission reward | RabbitMQ Outbox + Wallet idempotency reference | Asynchronous event delivery using Outbox pattern for guaranteed delivery |
 
 ## Configuration and endpoint selection
 
