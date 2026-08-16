@@ -9,15 +9,15 @@ This catalog defines current service responsibilities and ownership. A copied ID
 | ApiGateway | Edge routing/auth/CORS/error normalization | YARP route configuration | None | All business APIs through HTTP proxy | None |
 | UserAPI | Identity, authentication, profile, roles | Users, roles, refresh tokens, verification codes | User-owned DB via `UserDbContext` | None | None |
 | ComicAPI | Comic catalog, categories, outstanding list, translation entry point | Comics, categories, comic-category links, outstanding records | Comic-owned DB via `ComicDbContext` | UserAPI, ChapterAPI | None |
-| ChapterAPI | Chapters, pages, read entitlement | Chapters, chapter pages, local purchase entitlement records | Chapter-owned DB via `ChapterDbContext` | ComicAPI, MissionAPI | None |
-| SocialAPI | Comments, favorites, follows, reading history | Social interactions and reading history | Social-owned DB via `SocialDbContext` | MissionAPI; Comic validation over HTTP | None |
+| ChapterAPI | Chapters, pages, read entitlement | Chapters, chapter pages, local purchase entitlement records | Chapter-owned DB via `ChapterDbContext` | ComicAPI | MissionAPI |
+| SocialAPI | Comments, favorites, follows, reading history | Social interactions and reading history | Social-owned DB via `SocialDbContext` | Comic validation over HTTP | MissionAPI |
 | MissionAPI | Missions, progress/activity, rewards, notifications, uploads | Missions, user missions, mission activities, notifications, upload records | Mission-owned DB via `MissionDbContext` | ChapterAPI, SocialAPI, WalletAPI | None |
 | PaymentAPI | Deposit, SePay processing, purchase/payment transaction history | Payment transactions and payment-side purchase records | Payment-owned DB via `PaymentDbContext` | ChapterAPI, WalletAPI | None |
 | WalletAPI | Wallet balance, ledger, withdrawals | Wallets, currency entries, withdrawal requests | Wallet-owned DB via `WalletDbContext` | None | None |
 | BannerAPI | Home-page banners | Banner records | Banner-owned DB via `BannerDbContext` | None | None |
 | SharedKernel | Shared compile-time primitives | No runtime/domain data | None | None | None |
 
-RabbitMQ is infrastructure-only. No service currently publishes or consumes integration events.
+RabbitMQ is IMPLEMENTED for Mission Progress events.
 
 ## ApiGateway
 
@@ -89,10 +89,9 @@ ComicAPI owns comic metadata. It does not own chapter pages or payment entitleme
   - `GetUserPurchaseActivities`
 - **gRPC consumed:**
   - ComicAPI `ComicGrpc` for comic validation/view operations.
-  - MissionAPI `MissionProgress` for synchronous activity recording.
-- **Events published/consumed:** none.
+- **Events published:** `MissionActivityRecordedEvent`.
 - **External integrations:** Cloudinary for chapter-page images.
-- **Dependencies:** ComicAPI and MissionAPI.
+- **Dependencies:** ComicAPI.
 
 The `UserPurchase` entity here is an entitlement projection/local record. PaymentAPI separately owns financial purchase history.
 
@@ -105,10 +104,10 @@ The `UserPurchase` entity here is an entitlement projection/local record. Paymen
 - **Database:** `SocialDbContext`; runtime connection primarily comes from `SOCIAL_DB_CONNECTION`.
 - **Public REST responsibility:** `/api/comments`, `/api/favorites`, `/api/follows`, `/api/reading-history`.
 - **gRPC provided:** `SocialActivity.GetUserActivities` for MissionAPI snapshot synchronization.
-- **gRPC consumed:** `MissionProgress.RecordActivity` for comment/read activity notification.
-- **Events published/consumed:** none.
+- **gRPC consumed:** none.
+- **Events published:** `MissionActivityRecordedEvent`.
 - **External integrations:** an HTTP `ComicValidator` that validates comic IDs through Gateway `GET /comics/{id}` and fails closed on upstream failure.
-- **Dependencies:** MissionAPI; ComicAPI indirectly through the HTTP validator.
+- **Dependencies:** ComicAPI indirectly through the HTTP validator.
 
 ## MissionAPI
 
@@ -118,12 +117,12 @@ The `UserPurchase` entity here is an entitlement projection/local record. Paymen
 - **Owned data:** `Mission`, `UserMission`, `MissionActivity`, `Notification`, `Upload`.
 - **Database:** `MissionDbContext`; runtime connection primarily comes from `MISSION_DB_CONNECTION`.
 - **Public REST responsibility:** `/api/missions`, `/api/notifications`, `/api/uploads`.
-- **gRPC provided:** `MissionProgress.RecordActivity`.
+- **gRPC provided:** `MissionProgress.RecordActivity` (Legacy/Obsolete).
 - **gRPC consumed:**
   - ChapterAPI `ChapterGrpc.GetUserPurchaseActivities`.
   - SocialAPI `SocialActivity.GetUserActivities`.
   - WalletAPI `WalletService.AddCoin` through `WalletGrpcClient`.
-- **Events published/consumed:** none.
+- **Events consumed:** `MissionActivityRecordedEvent`.
 - **External integrations:** Cloudinary uploads.
 - **Dependencies:** ChapterAPI, SocialAPI, WalletAPI.
 

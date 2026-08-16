@@ -1,20 +1,20 @@
 using ChapterAPI.Interfaces;
-using Grpc.Core;
-using MissionAPI.Protos;
+using MassTransit;
 using SharedKernel.Enums;
+using SharedKernel.Events;
 
 namespace ChapterAPI.Services;
 
 public class MissionProgressNotifier : IMissionProgressNotifier
 {
-    private readonly MissionProgress.MissionProgressClient _client;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<MissionProgressNotifier> _logger;
 
     public MissionProgressNotifier(
-        MissionProgress.MissionProgressClient client,
+        IPublishEndpoint publishEndpoint,
         ILogger<MissionProgressNotifier> logger)
     {
-        _client = client;
+        _publishEndpoint = publishEndpoint;
         _logger = logger;
     }
 
@@ -22,18 +22,18 @@ public class MissionProgressNotifier : IMissionProgressNotifier
     {
         try
         {
-            await _client.RecordActivityAsync(new RecordMissionActivityRequest
+            await _publishEndpoint.Publish(new MissionActivityRecordedEvent
             {
                 UserId = userId,
-                MissionType = type.ToString(),
-                ActivityId = activityId.ToString(),
-                OccurredAtUnixSeconds = new DateTimeOffset(occurredAt.ToUniversalTime()).ToUnixTimeSeconds()
+                MissionType = type,
+                ActivityId = activityId,
+                OccurredAt = occurredAt
             });
         }
-        catch (RpcException exception)
+        catch (Exception exception)
         {
             _logger.LogWarning(exception,
-                "Could not record {MissionType} mission activity {ActivityId} for user {UserId}.",
+                "Could not publish {MissionType} mission activity {ActivityId} for user {UserId}.",
                 type, activityId, userId);
         }
     }

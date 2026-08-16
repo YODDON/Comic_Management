@@ -9,7 +9,7 @@ This document is the canonical map of current inter-component communication.
 | Browser REST/JSON through YARP | IMPLEMENTED | All frontend-to-backend calls |
 | Internal gRPC | IMPLEMENTED | Synchronous queries and commands between APIs |
 | Internal HTTP client | IMPLEMENTED in one place | SocialAPI comic validation |
-| RabbitMQ integration events | NOT IMPLEMENTED | Container exists only |
+| RabbitMQ integration events | IMPLEMENTED | Mission progress events from SocialAPI/ChapterAPI to MissionAPI |
 | Redis cache | IMPLEMENTED in ComicAPI | Caching heavily accessed comic lists |
 
 ## Frontend → Gateway → REST APIs
@@ -122,16 +122,19 @@ These cycles increase availability coupling. They are documented here but are no
 
 ## RabbitMQ / integration events
 
-### Status: NOT IMPLEMENTED / INFRASTRUCTURE ONLY
+### Status: IMPLEMENTED
 
 Docker Compose starts RabbitMQ at:
 
 - AMQP: `5672`
 - Management UI: `15672`
 
-No backend `.csproj` contains a RabbitMQ or MassTransit package. No application code defines an event bus, producer, consumer, exchange, routing key, queue, retry/DLQ strategy, Outbox, or Inbox.
+The following events are currently implemented via MassTransit:
 
-Therefore there is no current producer/event/consumer table. Event names found in historical or planning material are proposals, not runtime contracts.
+| Publisher | Event | Consumer | Exchange | Routing / Queue | Purpose |
+|---|---|---|---|---|---|
+| SocialAPI / ChapterAPI | `MissionActivityRecordedEvent` | MissionAPI | `SharedKernel.Events:MissionActivityRecordedEvent` | `mission-activity-recorded` | Notify MissionAPI of user activities asynchronously |
+
 
 ## Reliability characteristics
 
