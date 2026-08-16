@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using MissionAPI.Data;
 using ChapterAPI.Protos;
 using SocialAPI.Protos;
+using MassTransit;
+using MissionAPI.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +62,25 @@ if (!string.IsNullOrEmpty(jwtSecret))
             };
         });
 }
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<MissionActivityRecordedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitmqHost, "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("mission-activity-recorded", e =>
+        {
+            e.ConfigureConsumer<MissionActivityRecordedConsumer>(context);
+        });
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

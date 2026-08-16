@@ -8,6 +8,7 @@ using ChapterAPI.Interfaces;
 using ChapterAPI.Repositories;
 using ChapterAPI.Services;
 using MissionAPI.Protos;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,12 +39,16 @@ builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
 builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
 
-var missionApiUrl = Environment.GetEnvironmentVariable("MISSION_API_URL")
-    ?? builder.Configuration["GrpcSettings:MissionApiUrl"]
-    ?? "https://localhost:7224";
-builder.Services.AddGrpcClient<MissionProgress.MissionProgressClient>(o =>
+builder.Services.AddMassTransit(x =>
 {
-    o.Address = new Uri(missionApiUrl);
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitmqHost, "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+    });
 });
 
 var secretKey = Environment.GetEnvironmentVariable("JwtSettings__Secret") ?? Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JwtSettings:Secret"];

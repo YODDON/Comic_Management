@@ -4,6 +4,7 @@ using SocialAPI.Interfaces;
 using SocialAPI.Repositories;
 using SocialAPI.Services;
 using MissionAPI.Protos;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,12 +46,16 @@ builder.Services.AddScoped<ISocialActivityRepository, SocialActivityRepository>(
 builder.Services.AddScoped<ISocialActivityService, SocialActivityService>();
 builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
 
-var missionApiUrl = Environment.GetEnvironmentVariable("MISSION_API_URL")
-    ?? builder.Configuration["GrpcSettings:MissionApiUrl"]
-    ?? "https://localhost:7224";
-builder.Services.AddGrpcClient<MissionProgress.MissionProgressClient>(o =>
+builder.Services.AddMassTransit(x =>
 {
-    o.Address = new Uri(missionApiUrl);
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitmqHost, "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+    });
 });
 
 builder.Services.AddEndpointsApiExplorer();

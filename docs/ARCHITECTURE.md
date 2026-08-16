@@ -47,8 +47,8 @@ Canonical details:
 | n8n + LibreTranslate | Text translation webhook used by ComicAPI |
 | SMTP + Google Auth | Email workflows and Google login in UserAPI |
 | VietQR + SePay | Deposit QR generation and bank webhook processing in PaymentAPI |
-| Redis | Container only; no application cache client is implemented |
-| RabbitMQ | Container only; no publisher, consumer, event contract, Outbox, or Inbox is implemented |
+| Redis | IMPLEMENTED: Cache-Aside pattern for ComicAPI endpoints |
+| RabbitMQ | IMPLEMENTED: Mission activity events via MassTransit |
 
 ## Architecture inside services
 
@@ -105,18 +105,14 @@ The repository does not contain a shared database context or cross-database fore
 The current backend uses gRPC for internal calls that either query another service or perform a synchronous command. Examples include:
 
 - ComicAPI looking up users and chapter information.
-- ChapterAPI validating a comic and notifying MissionAPI of activity.
-- SocialAPI notifying MissionAPI of activity.
 - MissionAPI reading Chapter/Social activity snapshots and crediting WalletAPI.
 - PaymentAPI querying/unlocking ChapterAPI and debiting/crediting WalletAPI.
 
-There are circular synchronous dependencies at service level: ComicAPI ↔ ChapterAPI, ChapterAPI ↔ MissionAPI, and SocialAPI ↔ MissionAPI. They are current limitations, not an intended event-driven design. See [COMMUNICATION.md](COMMUNICATION.md).
+There are circular synchronous dependencies at service level, though ChapterAPI ↔ MissionAPI and SocialAPI ↔ MissionAPI are being decoupled via RabbitMQ events. See [COMMUNICATION.md](COMMUNICATION.md).
 
 ## Asynchronous communication
 
-**NOT IMPLEMENTED.** RabbitMQ is declared by Docker Compose, but no backend project references a RabbitMQ/MassTransit client and no publisher, consumer, queue, event envelope, retry policy, DLQ, Outbox, or Inbox exists in application code.
-
-Do not describe the current runtime as event-driven.
+**IMPLEMENTED.** Mission progress events are published by ChapterAPI/SocialAPI and consumed by MissionAPI via MassTransit and RabbitMQ.
 
 ## Authentication and authorization
 
@@ -150,7 +146,7 @@ The frontend stores tokens in `localStorage`. Admin UI routes additionally call 
 2. ComicAPI may call UserAPI for author data and ChapterAPI for counts/purchased comic IDs.
 3. ChapterAPI restricts public chapter listings to `Published` status.
 4. For page access, ChapterAPI checks price/purchase state in ChapterDB.
-5. Reading activity is recorded synchronously in MissionAPI through gRPC; reading history is separately stored in SocialDB when the frontend posts `/reading-history`.
+5. Reading activity is published asynchronously to MissionAPI via RabbitMQ; reading history is separately stored in SocialDB when the frontend posts `/reading-history`.
 
 ### Purchase a paid chapter
 
@@ -198,7 +194,7 @@ If wallet credit fails, the transaction remains pending so the webhook can be re
 
 ### Missions and activity
 
-- ChapterAPI and SocialAPI call MissionAPI `RecordActivity` synchronously.
+- ChapterAPI and SocialAPI publish MissionActivityRecordedEvent asynchronously via RabbitMQ.
 - MissionAPI also calls ChapterAPI and SocialAPI to synchronize historical activity snapshots.
 - `MissionActivity` has a unique `(UserId, MissionId, ActivityId)` index to prevent duplicate counting.
 - Completing a mission calls WalletAPI synchronously with a mission/user-derived reference so wallet credit can be deduplicated.
@@ -207,7 +203,7 @@ If wallet credit fails, the transaction remains pending so the webhook can be re
 
 - SocialAPI owns comments, favorites, follows, and reading history.
 - Comments support one parent/replies relationship.
-- Comment creation validates the comic through the Gateway's public `GET /comics/{id}` route, then notifies MissionAPI through gRPC. Validation fails closed when the Gateway or ComicAPI cannot return a successful response.
+- Comment creation validates the comic through the Gateway's public `GET /comics/{id}` route, then publishes a mission progress event via RabbitMQ. Validation fails closed when the Gateway or ComicAPI cannot return a successful response.
 - Favorite, follow, and reading-history records have composite unique constraints.
 
 ### Translation
@@ -244,9 +240,8 @@ This section classifies current limitations; it is not a migration backlog.
 | Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Reliability | Payment → Wallet → Chapter purchase orchestration can partially succeed; refund is best effort | Balance, payment record, and entitlement may require reconciliation | [DATABASE.md](DATABASE.md) and [COMMUNICATION.md](COMMUNICATION.md) |
 | Reliability | Mission reward depends on synchronous Wallet credit and has no durable retry | A timeout/failure can leave reward state incomplete | [COMMUNICATION.md](COMMUNICATION.md) |
-| Reliability | No Outbox/Inbox, RabbitMQ application integration, or persisted cross-service purchase state machine | Cross-service delivery is not durable or exactly-once | [COMMUNICATION.md](COMMUNICATION.md) and [DECISIONS.md](DECISIONS.md) |
-| Infrastructure | Redis and RabbitMQ containers exist without application cache/messaging integration | Operators may assume capabilities that runtime does not provide | [COMMUNICATION.md](COMMUNICATION.md) and [DEVELOPMENT.md](DEVELOPMENT.md) |
-| Coupling | ComicAPI ↔ ChapterAPI, ChapterAPI ↔ MissionAPI, and SocialAPI ↔ MissionAPI form synchronous cycles | Availability and deployment coupling; longer failure chains | [COMMUNICATION.md](COMMUNICATION.md) |
+| Reliability | No Outbox/Inbox, or persisted cross-service purchase state machine | Cross-service delivery is not durable or exactly-once | [COMMUNICATION.md](COMMUNICATION.md) and [DECISIONS.md](DECISIONS.md) |
+| Coupling | ComicAPI ↔ ChapterAPI forms synchronous cycles | Availability and deployment coupling | [COMMUNICATION.md](COMMUNICATION.md) |
 | Verification | No automated test project is committed | Critical flows rely on build/manual verification | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Observability | Default ASP.NET Core logging only; no standardized correlation or distributed tracing/OpenTelemetry | Cross-service failures are harder to trace | [CONVENTIONS.md](CONVENTIONS.md) |
 | Structure | Services remain one project with folder layering | Dependency direction is code-review enforced rather than compiler enforced | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) and [DECISIONS.md](DECISIONS.md) |
