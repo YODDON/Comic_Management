@@ -208,7 +208,7 @@ namespace ChapterAPI.Repositories
             };
 
             _context.UserPurchases.Add(purchase);
-            await _context.SaveChangesAsync();
+            // Removed SaveChangesAsync so it can be called from the service after publishing the event
             return true;
         }
 
@@ -237,6 +237,11 @@ namespace ChapterAPI.Repositories
                 .Where(purchase => purchase.UserId == userId)
                 .OrderBy(purchase => purchase.PurchasedAt)
                 .ToListAsync();
+        }
+
+        public Task SaveChangesAsync()
+        {
+            return _context.SaveChangesAsync();
         }
     }
 }

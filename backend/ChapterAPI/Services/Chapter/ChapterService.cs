@@ -43,7 +43,11 @@ namespace ChapterAPI.Services
             }
 
             var success = await _repository.UnlockChapterAsync(userId, chapterId);
-            if (success) await NotifyChapterPurchaseAsync(userId, chapterId);
+            if (success)
+            {
+                await NotifyChapterPurchaseAsync(userId, chapterId);
+                await _repository.SaveChangesAsync();
+            }
             return (success, false);
         }
 

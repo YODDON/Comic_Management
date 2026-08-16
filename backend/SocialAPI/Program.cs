@@ -16,10 +16,11 @@ builder.Services.AddControllers();
 builder.Services.AddGrpc();
 
 var socialConn = Environment.GetEnvironmentVariable("SOCIAL_DB_CONNECTION") ?? builder.Configuration.GetConnectionString("SocialConnection");
-if (!string.IsNullOrEmpty(socialConn))
+if (string.IsNullOrEmpty(socialConn))
 {
-    builder.Services.AddDbContext<SocialDbContext>(options => options.UseSqlServer(socialConn));
+    socialConn = "Server=localhost;Database=SocialDB;Trusted_Connection=True;TrustServerCertificate=True;";
 }
+builder.Services.AddDbContext<SocialDbContext>(options => options.UseSqlServer(socialConn));
 
 builder.Services.AddHttpClient<IComicValidator, ComicValidator>(client =>
 {
@@ -49,6 +50,12 @@ builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddEntityFrameworkOutbox<SocialAPI.Data.SocialDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";

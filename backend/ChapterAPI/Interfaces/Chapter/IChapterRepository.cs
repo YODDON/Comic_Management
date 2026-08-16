@@ -25,5 +25,6 @@ namespace ChapterAPI.Interfaces
         Task<int> GetChapterCountAsync(Guid comicId);
         Task<List<Guid>> GetPurchasedComicIdsAsync(int userId);
         Task<List<UserPurchase>> GetUserPurchaseActivitiesAsync(int userId);
+        Task SaveChangesAsync();
     }
 }

@@ -119,24 +119,24 @@ System reliability and performance are improved.
 Do not:
 Do not document further events or caching mechanisms before real implementation, configuration, and consumers exist.
 
-## ADR-007 — Local transactions and local idempotency; no distributed transaction
+## ADR-007 — Local transactions and limited distributed patterns
 
 Status: Transitional
 
 Context:
-Payment purchase/deposit and Mission reward flows call Wallet/Chapter through gRPC. Wallet ledger entries have unique `ReferenceId` values, Payment has unique transaction/purchase keys, and selected repositories use `Serializable` transactions.
+Payment purchase/deposit and Mission reward flows call Wallet/Chapter through gRPC. Wallet ledger entries have unique `ReferenceId` values, Payment has unique transaction/purchase keys, and selected repositories use `Serializable` transactions. Furthermore, SocialAPI and ChapterAPI publish `MissionActivityRecordedEvent` to MissionAPI via RabbitMQ.
 
 Decision:
-Each database currently maintains its own local transaction. Cross-service flows rely on stable references, unique constraints, and best-effort compensation.
+Each database currently maintains its own local transaction. Cross-service flows via gRPC rely on stable references, unique constraints, and best-effort compensation. For messaging, the **MassTransit Entity Framework Core Outbox** pattern is implemented in `SocialAPI` and `ChapterAPI` to ensure events are atomically committed with local changes before being dispatched to RabbitMQ.
 
 Reason:
-Reason inferred from current implementation: the repository has no Saga, Outbox, or Inbox.
+Reason inferred from current implementation: The system is incrementally adopting distributed patterns. Outbox pattern ensures guaranteed delivery of mission progress events.
 
 Consequences:
-A timeout or crash between steps may require retry or reconciliation. Purchase refunds are best effort and are not a durable state machine.
+For gRPC calls, a timeout or crash between steps may require retry or reconciliation. For messaging, events are durably persisted in Outbox tables and reliably delivered.
 
 Do not:
-Do not describe current flows as exactly-once or atomic across services.
+Do not describe gRPC flows as exactly-once or atomic across services.
 
 ## ADR-008 — Authorization is enforced by backend components
 

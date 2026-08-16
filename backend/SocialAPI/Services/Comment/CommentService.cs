@@ -82,6 +82,11 @@ namespace SocialAPI.Services
             };
 
             await _repository.AddAsync(comment);
+
+            // Publish message via MassTransit Outbox BEFORE SaveChangesAsync
+            await _missionProgressNotifier.RecordAsync(
+                numericUserId, MissionType.LeaveComment, comment.Id, comment.CreatedAt);
+
             await _repository.SaveChangesAsync();
 
             var result = new CommentDto
@@ -93,8 +98,7 @@ namespace SocialAPI.Services
                 ParentCommentId = comment.ParentCommentId,
                 CreatedAt = comment.CreatedAt
             };
-            await _missionProgressNotifier.RecordAsync(
-                numericUserId, MissionType.LeaveComment, result.Id, result.CreatedAt);
+
             return result;
         }
 

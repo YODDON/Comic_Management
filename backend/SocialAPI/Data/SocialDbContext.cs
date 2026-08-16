@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SocialAPI.Entities;
+using MassTransit;
 
 namespace SocialAPI.Data
 {
@@ -39,6 +40,10 @@ namespace SocialAPI.Data
                 .WithMany(c => c.Replies)
                 .HasForeignKey(c => c.ParentCommentId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
         }
     }
 }
