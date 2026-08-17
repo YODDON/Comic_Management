@@ -65,7 +65,6 @@ Proto files are duplicated between providers and consumers. Changes must keep al
 |---|---|---|---|---|---|---|
 | ComicAPI | UserAPI | gRPC | Query | `user.proto`: `GetUserById`, `GetUsersByIds`, `ValidateToken` | Enrich/validate user and author information | Comic responses need user data immediately |
 | ComicAPI | ChapterAPI | gRPC | Query | `chapter.proto`: `GetChapterCount`, `GetPurchasedComicIds` | Enrich comic catalog/detail and purchased listing | Response construction waits for chapter data |
-| ChapterAPI | ComicAPI | gRPC | Query / command | `comic.proto`: `CheckComicExists`, `IncrementComicView` | Validate comic and increment view | Current chapter use cases call directly |
 | ChapterAPI | MissionAPI | gRPC | Notification implemented synchronously | `mission_progress.proto`: `RecordActivity` | Record read/purchase mission activity | Current notifier waits for MissionAPI |
 | SocialAPI | MissionAPI | gRPC | Notification implemented synchronously | `mission_progress.proto`: `RecordActivity` | Record comment/read activity | Current service waits for MissionAPI |
 | MissionAPI | ChapterAPI | gRPC | Query | `chapter_activity.proto`: `GetUserPurchaseActivities` | Reconstruct/synchronize purchase activity | Mission synchronization requests a snapshot |
@@ -80,7 +79,6 @@ The semantics column classifies current behavior; it does not assert that any in
 | Provider | Server implementation | Contract |
 |---|---|---|
 | UserAPI | `GrpcServices/UserGrpcService.cs` | `UserService` |
-| ComicAPI | `GrpcServices/ComicGrpcService.cs` | `ComicGrpc` |
 | ChapterAPI | `GrpcServices/ChapterGrpcService.cs` | `ChapterGrpc` |
 | SocialAPI | `GrpcServices/SocialActivityGrpcService.cs` | `SocialActivity` |
 | MissionAPI | `GrpcServices/MissionProgressGrpcService.cs` | `MissionProgress` |
@@ -90,9 +88,9 @@ BannerAPI and PaymentAPI do not host gRPC services.
 
 ## Internal HTTP communication
 
-SocialAPI registers `IComicValidator` with an `HttpClient`. Its base address uses `API_GATEWAY_URL`, then `ApiGateway:BaseUrl`, and finally the local Gateway fallback `http://127.0.0.1:5028`. It requests the Gateway contract `GET /comics/{id}`, which YARP rewrites to ComicAPI `GET /api/comics/{id}`.
+SocialAPI and ChapterAPI register `IComicValidator` with an `HttpClient`. Its base address uses `API_GATEWAY_URL`, then `ApiGateway:BaseUrl`, and finally the local Gateway fallback `http://127.0.0.1:5028`. It requests the Gateway contract `GET /comics/{id}`, which YARP rewrites to ComicAPI `GET /api/comics/{id}`.
 
-Only a successful upstream response confirms that the comic exists. `404`, other non-success statuses, request failures, and timeouts all fail closed, so SocialAPI does not create a comment or favorite for an unvalidated comic ID. Communication failures are logged without changing the existing public SocialAPI response contracts.
+Only a successful upstream response confirms that the comic exists. `404`, other non-success statuses, request failures, and timeouts all fail closed, so SocialAPI does not create a comment or favorite (and ChapterAPI does not create a chapter) for an unvalidated comic ID. Communication failures are logged without changing the existing public response contracts.
 
 ## Synchronous dependency graph
 
@@ -100,7 +98,6 @@ Only a successful upstream response confirms that the comic exists. `404`, other
 flowchart LR
     Comic --> User
     Comic --> Chapter
-    Chapter --> Comic
     Chapter --> Mission
     Social --> Mission
     Mission --> Chapter
@@ -108,11 +105,10 @@ flowchart LR
     Payment --> Chapter
     Payment --> Wallet
     Social -. HTTP validator .-> Comic
+    Chapter -. HTTP validator .-> Comic
 ```
 
 Current circular service dependencies:
-
-- ComicAPI ↔ ChapterAPI.
 - ChapterAPI ↔ MissionAPI.
 - SocialAPI ↔ MissionAPI.
 
@@ -133,6 +129,7 @@ The following events are currently implemented via MassTransit:
 |---|---|---|---|---|---|
 | SocialAPI / ChapterAPI | `MissionActivityRecordedEvent` | MissionAPI | `SharedKernel.Events:MissionActivityRecordedEvent` | `mission-activity-recorded` | Notify MissionAPI of user activities asynchronously |
 | MissionAPI | `MissionRewardGrantedEvent` | WalletAPI | `SharedKernel.Events:MissionRewardGrantedEvent` | `mission-reward-granted` | Credit mission reward asynchronously via Outbox pattern |
+| ChapterAPI | `ComicViewedIntegrationEvent` | ComicAPI | `SharedKernel.Events:ComicViewedIntegrationEvent` | `comic-viewed` | Notify ComicAPI to asynchronously increment comic view count |
 
 
 ## Reliability characteristics

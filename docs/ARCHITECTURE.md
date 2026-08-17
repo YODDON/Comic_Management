@@ -241,7 +241,7 @@ This section classifies current limitations; it is not a migration backlog.
 | Data / configuration | Committed connection-string values are empty | Runtime requires correctly supplied environment configuration | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Reliability | Payment → Wallet → Chapter purchase orchestration can partially succeed; refund is best effort | Balance, payment record, and entitlement may require reconciliation | [DATABASE.md](DATABASE.md) and [COMMUNICATION.md](COMMUNICATION.md) |
 | Reliability | No Saga or persisted cross-service purchase state machine. (RabbitMQ events use Outbox pattern) | Cross-service gRPC delivery is not durable or exactly-once | [COMMUNICATION.md](COMMUNICATION.md) and [DECISIONS.md](DECISIONS.md) |
-| Coupling | ComicAPI ↔ ChapterAPI forms synchronous cycles | Availability and deployment coupling | [COMMUNICATION.md](COMMUNICATION.md) |
+| Coupling | ChapterAPI ↔ MissionAPI and SocialAPI ↔ MissionAPI forms synchronous cycles | Availability and deployment coupling | [COMMUNICATION.md](COMMUNICATION.md) |
 | Verification | No automated test project is committed | Critical flows rely on build/manual verification | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Observability | Default ASP.NET Core logging only; no standardized correlation or distributed tracing/OpenTelemetry | Cross-service failures are harder to trace | [CONVENTIONS.md](CONVENTIONS.md) |
 

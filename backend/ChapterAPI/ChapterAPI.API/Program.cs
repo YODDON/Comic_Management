@@ -29,11 +29,12 @@ if (string.IsNullOrEmpty(chapterConn))
 }
 builder.Services.AddDbContext<ChapterDbContext>(options => options.UseSqlServer(chapterConn));
 
-var comicApiUrl = Environment.GetEnvironmentVariable("COMIC_API_URL") ??
-    builder.Configuration["GrpcSettings:ComicApiUrl"] ?? "https://localhost:7024";
-builder.Services.AddGrpcClient<ChapterAPI.Protos.ComicGrpc.ComicGrpcClient>(o =>
+var apiGatewayUrl = Environment.GetEnvironmentVariable("API_GATEWAY_URL") 
+    ?? builder.Configuration["ApiGateway:BaseUrl"] 
+    ?? "http://localhost:5028";
+builder.Services.AddHttpClient<IComicValidator, ComicValidator>(client =>
 {
-    o.Address = new Uri(comicApiUrl);
+    client.BaseAddress = new Uri(apiGatewayUrl + "/api");
 });
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

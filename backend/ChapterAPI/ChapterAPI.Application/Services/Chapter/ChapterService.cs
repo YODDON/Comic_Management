@@ -8,6 +8,8 @@ using SharedKernel.Responses;
 using Grpc.Core;
 using ChapterAPI.Entities;
 using SharedKernel.Enums;
+using MassTransit;
+using SharedKernel.Events;
 
 namespace ChapterAPI.Services
 {
@@ -15,22 +17,25 @@ namespace ChapterAPI.Services
     {
         private readonly IChapterRepository _repository;
         private readonly IMapper _mapper;
-        private readonly ChapterAPI.Protos.ComicGrpc.ComicGrpcClient _comicServiceClient;
+        private readonly IComicValidator _comicValidator;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IMissionProgressNotifier _missionProgressNotifier;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public ChapterService(
             IChapterRepository repository, 
             IMapper mapper, 
-            ChapterAPI.Protos.ComicGrpc.ComicGrpcClient comicServiceClient,
+            IComicValidator comicValidator,
             ICloudinaryService cloudinaryService,
-            IMissionProgressNotifier missionProgressNotifier)
+            IMissionProgressNotifier missionProgressNotifier,
+            IPublishEndpoint publishEndpoint)
         {
             _repository = repository;
             _mapper = mapper;
-            _comicServiceClient = comicServiceClient;
+            _comicValidator = comicValidator;
             _cloudinaryService = cloudinaryService;
             _missionProgressNotifier = missionProgressNotifier;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<(bool Success, bool AlreadyPurchased)> UnlockChapterAsync(int userId, Guid chapterId)
@@ -142,29 +147,21 @@ namespace ChapterAPI.Services
 
         public async Task<ApiResponse<ChapterSummaryDto>> CreateChapterAsync(CreateChapterRequestDto request)
         {
-            ChapterAPI.Protos.CheckComicExistsResponse grpcResponse;
+            bool exists;
             try
             {
-                grpcResponse = await _comicServiceClient.CheckComicExistsAsync(new ChapterAPI.Protos.CheckComicExistsRequest
-                {
-                    ComicId = request.ComicId.ToString()
-                });
+                exists = await _comicValidator.ExistsAsync(request.ComicId);
             }
-            catch (RpcException)
+            catch (Exception ex)
             {
                 return ApiResponse<ChapterSummaryDto>.ErrorResponse(
-                    "ComicAPI gRPC is unavailable. Please make sure the ComicAPI HTTPS profile is running on port 7024.",
+                    $"Comic validation failed: {ex.Message}",
                     503);
             }
 
-            if (!grpcResponse.Exists)
+            if (!exists)
             {
-                return new ApiResponse<ChapterSummaryDto>(null, "Comic not found.", 404);
-            }
-
-            if (string.Equals(grpcResponse.Status, "Dropped", StringComparison.OrdinalIgnoreCase))
-            {
-                return new ApiResponse<ChapterSummaryDto>(null, "Rejected comics are read-only. Chapters cannot be added.", 409);
+                return ApiResponse<ChapterSummaryDto>.ErrorResponse("The specified Comic does not exist or its status prevents adding chapters.", 404);
             }
 
             var slug = SharedKernel.Utilities.SlugGenerator.GenerateSlug(request.Title);
@@ -401,30 +398,27 @@ namespace ChapterAPI.Services
         {
             try
             {
-                await _comicServiceClient.IncrementComicViewAsync(new ChapterAPI.Protos.IncrementComicViewRequest
-                {
-                    ComicId = comicId.ToString()
-                });
+                await _publishEndpoint.Publish(new ComicViewedIntegrationEvent(comicId));
             }
-            catch (RpcException)
+            catch (Exception)
             {
-                // Reading remains available if ComicAPI cannot record analytics temporarily.
+                // Reading remains available if analytics cannot be recorded temporarily.
             }
         }
 
         private async Task<bool?> IsRejectedComicAsync(Guid comicId)
         {
+            bool exists;
             try
             {
-                var response = await _comicServiceClient.CheckComicExistsAsync(
-                    new ChapterAPI.Protos.CheckComicExistsRequest { ComicId = comicId.ToString() });
-                return response.Exists
-                    && string.Equals(response.Status, "Dropped", StringComparison.OrdinalIgnoreCase);
+                exists = await _comicValidator.ExistsAsync(comicId);
             }
-            catch (RpcException)
+            catch (Exception)
             {
                 return null;
             }
+            
+            return !exists;
         }
 
         public async Task<ApiResponse<bool>> ReorderPagesAsync(Guid chapterId, List<ReorderPageDto> request)

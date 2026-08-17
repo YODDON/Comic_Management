@@ -25,7 +25,7 @@ namespace ComicAPI.Application.Interfaces
         Task<ApiResponse<ComicDetailDto>> AddOutstandingComicAsync(CreateOutstandingRequestDto request);
         Task<ApiResponse<ComicDetailDto>> ToggleOutstandingComicAsync(CreateOutstandingRequestDto request);
         Task<ApiResponse<ComicCoverUploadDto>> UploadCoverAsync(Microsoft.AspNetCore.Http.IFormFile file);
-        Task<(bool Exists, string Status)> CheckComicExistsAsync(Guid comicId);
+
         Task<bool> IncrementViewCountAsync(Guid comicId);
     }
 }

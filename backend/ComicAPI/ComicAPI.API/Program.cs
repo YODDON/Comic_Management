@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using SharedKernel.Extensions;
+using MassTransit;
+using ComicAPI.API.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,7 +81,24 @@ builder.Services.AddScoped<ComicAPI.Application.Interfaces.ICategoryService, Com
 builder.Services.AddScoped<ComicAPI.Domain.Interfaces.IComicRepository, ComicAPI.Infrastructure.Repositories.ComicRepository>();
 builder.Services.AddScoped<ComicAPI.Application.Interfaces.IComicService, ComicAPI.Application.Services.ComicService>();
 
-builder.Services.AddGrpc();
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<ComicViewedEventConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitmqHost, "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("comic-viewed", e =>
+        {
+            e.ConfigureConsumer<ComicViewedEventConsumer>(context);
+        });
+    });
+});
 
 builder.Services.AddCustomJwtAuthentication(builder.Configuration);
 
@@ -102,6 +121,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGrpcService<ComicAPI.API.GrpcServices.ComicGrpcService>();
 
 app.Run();

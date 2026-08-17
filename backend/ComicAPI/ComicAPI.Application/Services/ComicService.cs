@@ -93,11 +93,7 @@ namespace ComicAPI.Application.Services
                     "Comic cover uploaded successfully.");
         }
 
-        public async Task<(bool Exists, string Status)> CheckComicExistsAsync(Guid comicId)
-        {
-            var comic = await _comicRepository.GetComicByIdAsync(comicId);
-            return (comic is not null, comic?.Status.ToString() ?? string.Empty);
-        }
+
 
         public Task<bool> IncrementViewCountAsync(Guid comicId) =>
             _comicRepository.IncrementViewCountAsync(comicId);
