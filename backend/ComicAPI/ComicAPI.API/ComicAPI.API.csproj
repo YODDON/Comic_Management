@@ -15,6 +15,7 @@
 		</PackageReference>
 		<PackageReference Include="MassTransit" Version="9.2.0" />
 		<PackageReference Include="MassTransit.RabbitMQ" Version="9.2.0" />
+		<PackageReference Include="MediatR" Version="14.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.20" />
 		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.11" />

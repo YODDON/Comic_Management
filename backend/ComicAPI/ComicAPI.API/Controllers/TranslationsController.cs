@@ -9,11 +9,11 @@ namespace ComicAPI.API.Controllers;
 [Route("api/[controller]")]
 public sealed class TranslationsController : ControllerBase
 {
-    private readonly ITranslationService _translationService;
+    private readonly MediatR.IMediator _mediator;
 
-    public TranslationsController(ITranslationService translationService)
+    public TranslationsController(MediatR.IMediator mediator)
     {
-        _translationService = translationService;
+        _mediator = mediator;
     }
 
     [HttpPost]
@@ -21,7 +21,7 @@ public sealed class TranslationsController : ControllerBase
         [FromBody] TranslateTextRequestDto request,
         CancellationToken cancellationToken)
     {
-        var response = await _translationService.TranslateAsync(request, cancellationToken);
+        var response = await _mediator.Send(new ComicAPI.Application.Features.Translations.Commands.TranslateTextCommand { Request = request }, cancellationToken);
         return StatusCode(response.StatusCode, response);
     }
 }

@@ -77,9 +77,9 @@ builder.Services.AddGrpcClient<ChapterAPI.Protos.ChapterGrpc.ChapterGrpcClient>(
 });
 
 builder.Services.AddScoped<ComicAPI.Domain.Interfaces.ICategoryRepository, ComicAPI.Infrastructure.Repositories.CategoryRepository>();
-builder.Services.AddScoped<ComicAPI.Application.Interfaces.ICategoryService, ComicAPI.Application.Services.CategoryService>();
 builder.Services.AddScoped<ComicAPI.Domain.Interfaces.IComicRepository, ComicAPI.Infrastructure.Repositories.ComicRepository>();
-builder.Services.AddScoped<ComicAPI.Application.Interfaces.IComicService, ComicAPI.Application.Services.ComicService>();
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ComicAPI.Application.Features.Comics.Queries.GetComicsQuery).Assembly));
 
 builder.Services.AddMassTransit(x =>
 {
