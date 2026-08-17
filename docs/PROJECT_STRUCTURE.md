@@ -42,30 +42,32 @@ Every executable backend project currently targets `net8.0`. Each business API r
 
 ### Current project boundary
 
-Each service is one project. Folder names provide logical layering, but there are no separate `.Domain`, `.Application`, `.Infrastructure`, or `.API` projects.
+All business services have been migrated to a Clean Architecture structure, consisting of four separate projects per service: `.API`, `.Application`, `.Domain`, and `.Infrastructure`.
 
-This layout describes `CURRENT` code placement. Do not create `.API`, `.Application`, `.Domain`, or `.Infrastructure` projects unless the task explicitly performs an approved migration for that service. When a service is actually migrated, update this file in the same task; target trees that are not implemented belong in planning material rather than this canonical structure document.
+Typical current structure for a service:
 
 Typical current structure:
 
 ```text
 SomeAPI/
-├── Controllers/                # REST transport adapters
-├── GrpcServices/               # gRPC server transport adapters when the service provides gRPC
-├── DTOs/                       # Request/response and service result models
-├── Entities/                   # EF/domain data models
-├── Interfaces/                 # Service, repository, and external-port abstractions
-├── Services/                   # Use-case logic, gRPC adapters/clients, external adapters
-├── Repositories/               # EF Core persistence implementations
-├── Data/                       # DbContext
-├── Mappings/                   # AutoMapper profiles where present
-├── Protos/                     # Local gRPC contract copies
-├── Settings/                   # Options models where present
-├── Migrations/                 # EF Core migrations and model snapshot
-├── Properties/launchSettings.json
-├── Program.cs                  # Composition root and middleware pipeline
-├── appsettings.json
-└── SomeAPI.csproj
+├── SomeAPI.API/
+│   ├── Controllers/                # REST transport adapters
+│   ├── GrpcServices/               # gRPC server transport adapters
+│   ├── Program.cs                  # Composition root and middleware
+│   └── SomeAPI.API.csproj
+├── SomeAPI.Application/
+│   ├── DTOs/                       # Request/response models
+│   ├── Interfaces/                 # Service and repository abstractions
+│   ├── Services/                   # Use-case logic and gRPC clients
+│   └── SomeAPI.Application.csproj
+├── SomeAPI.Domain/
+│   ├── Entities/                   # EF/domain data models
+│   └── SomeAPI.Domain.csproj
+└── SomeAPI.Infrastructure/
+    ├── Data/                       # DbContext
+    ├── Repositories/               # EF Core persistence implementations
+    ├── Migrations/                 # EF Core migrations
+    └── SomeAPI.Infrastructure.csproj
 ```
 
 Folder presence differs by service; do not assume every project has every folder.
@@ -158,14 +160,7 @@ WalletAPI groups its three persistence/use-case areas consistently under `DTOs`,
 
 ### BannerAPI
 
-BannerAPI is the smallest business API and uses a straightforward layered structure:
-
-```text
-BannersController -> BannerService -> BannerRepository -> BannerDbContext
-                           |
-                           +-> CloudinaryService
-```
-
+BannerAPI uses the standard 4-project Clean Architecture structure.
 It does not provide or consume gRPC.
 
 ### SharedKernel

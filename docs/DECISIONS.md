@@ -59,28 +59,28 @@ Provider availability and latency affect callers. Current cycles include Comic�
 Do not:
 Do not reference another service's classes/repositories through a project reference. Do not remove gRPC merely to label the system “event-driven.”
 
-## ADR-004 — One project per service with folder-based layering
+## ADR-004 — Clean Architecture for Microservices
 
-Status: Transitional
+Status: Accepted (Supersedes folder-based layering)
 
 Context:
-Each microservice is generally one ASP.NET Core project containing Controllers, Services, Interfaces, Repositories, Data, Entities, and integration-specific folders.
+Each microservice was originally a single ASP.NET Core project containing all layers (folder-based layering). This structure lacked compiler enforcement for architectural boundaries, leading to potential coupling.
 
 Decision:
-The current architecture keeps a boundary at the service/project level and uses the logical dependency path `Controller/gRPC adapter → Service → Repository → DbContext`.
-*Note: ComicAPI has successfully migrated to a four-project Clean Architecture (`.API`, `.Application`, `.Domain`, `.Infrastructure`).*
+The architecture has transitioned to a four-project Clean Architecture per microservice: `.API`, `.Application`, `.Domain`, and `.Infrastructure`. The compiler now enforces the dependency flow: `Infrastructure` and `API` depend on `Application`, and `Application` depends on `Domain`.
+*Note: All APIs (ComicAPI, UserAPI, ChapterAPI, MissionAPI, PaymentAPI, WalletAPI, SocialAPI, BannerAPI) have been successfully migrated to this structure.*
 
 Reason:
-Reason inferred from current architecture: the structure is direct for the current codebase and avoids creating many subprojects. Clean Architecture is being adopted incrementally.
+To enforce separation of concerns, ensure the domain model is independent of infrastructure, and improve maintainability as the system grows.
 
 Consequences:
-The compiler does not enforce Domain/Application/Infrastructure boundaries for most services. Clean Architecture, DDD, and CQRS are not general implemented architecture except for `ComicAPI`.
+The compiler enforces Domain/Application/Infrastructure boundaries for all services.
 
 Supersession condition:
-This decision remains authoritative for `CURRENT` code until an approved per-service architecture migration is actually implemented. When a service is separated into API/Application/Domain/Infrastructure boundaries, update this ADR together with `PROJECT_STRUCTURE.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`, and affected service documentation in that migration task. A service is not considered migrated until source code and project references enforce the new dependencies.
+This decision supersedes the previous folder-based layering approach. All new services must follow the four-project Clean Architecture structure.
 
 Do not:
-Do not describe every service as a four-project Clean Architecture implementation or require a split without an approved migration task.
+Do not bypass the layers. `API` should only depend on `Application` and `Infrastructure` for DI registration. `Domain` should have no dependencies on `Infrastructure` or `API`.
 
 ## ADR-005 — SharedKernel contains shared technical/common primitives
 

@@ -12,7 +12,7 @@ This document distinguishes rules enforced by the current architecture from comm
 
 - **REQUIRED**: a business service must not reference another business service project. Communicate through REST/gRPC contracts.
 - **REQUIRED**: the service that owns data also owns its `DbContext`, migrations, and repositories.
-- **CURRENT PATTERN**: each service is one ASP.NET Core project organized with technical folders; there are no separate `.Domain`, `.Application`, or `.Infrastructure` projects.
+- **CURRENT PATTERN**: each service follows a 4-project Clean Architecture structure (`.API`, `.Application`, `.Domain`, `.Infrastructure`).
 - **CURRENT PATTERN**: namespaces begin with the project name, for example `ChapterAPI.Services.Chapter`.
 - **RECOMMENDED**: class and file names should identify the feature and role, such as `ChapterService`, `IChapterRepository`, or `CreateChapterDto`.
 
@@ -31,9 +31,8 @@ Do not rename public routes or JSON contracts merely for naming consistency unle
 
 ## Services, repositories, and dependencies
 
-- **CURRENT REQUIRED**: in the current folder-layered architecture, EF Core access must remain inside repository/data-access components and must not leak into controllers or transport adapters.
-- **FUTURE APPROVED EXCEPTION**: if an explicitly approved Clean Architecture/CQRS migration introduces dedicated query infrastructure or a read-side implementation, update this convention together with the code and [DECISIONS.md](DECISIONS.md). The invariant remains: transport layers must not directly access `DbContext`.
-- **RECOMMENDED**: the application/service/use-case layer orchestrates persistence abstractions, external integrations, and gRPC clients.
+- **CURRENT REQUIRED**: in the Clean Architecture pattern, EF Core access must remain inside the `.Infrastructure` project and must not leak into controllers or transport adapters in the `.API` layer.
+- **RECOMMENDED**: the application/service/use-case layer (`.Application`) orchestrates persistence abstractions, external integrations, and gRPC clients.
 - **RECOMMENDED**: repositories focus on persistence, queries, and local transactions; they do not decide HTTP status codes or read claims.
 - **RECOMMENDED**: do not create a generic repository solely to wrap `DbSet` CRUD operations. Prefer domain- or feature-specific abstractions when an abstraction provides real value.
 - **CURRENT PATTERN**: service and repository interfaces live under `Interfaces/`; implementations live under `Services/` or `Repositories/`.
@@ -44,7 +43,7 @@ Do not rename public routes or JSON contracts merely for naming consistency unle
 ## Domain and business rules
 
 - **CURRENT PATTERN**: entities are primarily EF data models with public properties; most invariants live in services, repositories, or helpers such as `WalletRules`.
-- **REQUIRED**: do not describe the current repository as complete DDD or compiler-enforced Clean Architecture.
+- **REQUIRED**: the repository implements a 4-project Clean Architecture, but it may not use full CQRS handlers or advanced DDD aggregates for all services yet.
 - **RECOMMENDED**: money, state-transition, and idempotency rules should have one clear, testable enforcement point.
 - **RECOMMENDED**: do not introduce aggregates, value objects, CQRS handlers, or generic abstractions without a concrete need and the required approval.
 

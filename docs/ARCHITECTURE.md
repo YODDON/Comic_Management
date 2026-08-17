@@ -54,29 +54,31 @@ Canonical details:
 
 ### Current pattern
 
-Each business service is currently one `.csproj`. Most use folder-based layering:
+### Current pattern
+
+All business services have been migrated to a Clean Architecture pattern, structured as four separate `.csproj` projects per service: `.API`, `.Application`, `.Domain`, and `.Infrastructure`.
 
 ```text
-REST Controller or gRPC adapter
+.API (REST Controller or gRPC adapter, Composition Root)
               ↓
-Application/service class
+.Application (Use Cases, DTOs, Interfaces, Service implementations)
               ↓
-Repository abstraction/implementation
-              ↓
-EF Core DbContext and service-owned database
+.Domain (Entities, Domain Interfaces)
+              ↑
+.Infrastructure (DbContext, Repositories, External Adapters)
 ```
 
-DTOs, entities, interfaces, repositories, services, generated gRPC types, configuration, and infrastructure adapters live in the same project. This is layered architecture, not compiler-enforced Clean Architecture.
+This ensures that the domain and application layers have no dependencies on infrastructure or transport logic. The compiler strictly enforces these architectural boundaries.
 
 Not every operation needs persistence. Translation and image upload flow from controller to a service and then to an external adapter without a repository.
 
-### Dependency direction currently enforced by code review
+### Dependency direction currently enforced by compiler
 
-- Controllers and gRPC server adapters should not access `DbContext` or repositories directly.
-- Services orchestrate use cases and dependencies.
-- Repositories contain EF Core queries and local database transactions.
+- `.API` depends on `.Application` and `.Infrastructure` (for DI registration only).
+- `.Infrastructure` depends on `.Application` (to implement interfaces).
+- `.Application` depends on `.Domain`.
+- `.Domain` has no dependencies on other layers.
 - Public REST responses use DTOs/response wrappers rather than returning EF entities directly.
-- Infrastructure types can still be referenced from service projects because layers are not separate projects.
 
 See [CONVENTIONS.md](CONVENTIONS.md) for required versus observed conventions.
 
@@ -242,6 +244,5 @@ This section classifies current limitations; it is not a migration backlog.
 | Coupling | ComicAPI ↔ ChapterAPI forms synchronous cycles | Availability and deployment coupling | [COMMUNICATION.md](COMMUNICATION.md) |
 | Verification | No automated test project is committed | Critical flows rely on build/manual verification | [DEVELOPMENT.md](DEVELOPMENT.md) |
 | Observability | Default ASP.NET Core logging only; no standardized correlation or distributed tracing/OpenTelemetry | Cross-service failures are harder to trace | [CONVENTIONS.md](CONVENTIONS.md) |
-| Structure | Services remain one project with folder layering | Dependency direction is code-review enforced rather than compiler enforced | [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) and [DECISIONS.md](DECISIONS.md) |
 
 These limitations do not mean the proposed replacement architecture is already approved or implemented. Canonical documents must be updated only when the corresponding code/configuration changes.
