@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using PaymentAPI.Domain.Entities;
 using PaymentAPI.Entities;
+using MassTransit.EntityFrameworkCoreIntegration;
 
 namespace PaymentAPI.Data
 {
@@ -11,6 +13,7 @@ namespace PaymentAPI.Data
 
         public DbSet<UserPurchase> UserPurchases { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<PurchaseState> PurchaseStates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +30,12 @@ namespace PaymentAPI.Data
             {
                 entity.Property(x => x.Price).HasPrecision(18, 2);
                 entity.HasIndex(x => new { x.UserId, x.ChapterId }).IsUnique();
+            });
+            modelBuilder.Entity<PurchaseState>(entity =>
+            {
+                entity.HasKey(x => x.CorrelationId);
+                entity.Property(x => x.CurrentState).HasMaxLength(64);
+                entity.Property(x => x.Price).HasPrecision(18, 2);
             });
         }
     }

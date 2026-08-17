@@ -12,6 +12,8 @@ using Grpc.Core;
 using WalletAPI.Protos;
 using Microsoft.Extensions.Options;
 using PaymentAPI.Settings;
+using MassTransit;
+using SharedKernel.Contracts.Purchase;
 
 namespace PaymentAPI.Services
 {
@@ -23,6 +25,7 @@ namespace PaymentAPI.Services
         private readonly IPaymentRepository _repository;
         private readonly ChapterGrpc.ChapterGrpcClient _chapterGrpcClient;
         private readonly WalletService.WalletServiceClient _walletGrpcClient;
+        private readonly IRequestClient<SubmitPurchaseCommand> _purchaseClient;
         private readonly TopUpSettings _topUpSettings;
         private readonly BankSettings _bankSettings;
 
@@ -30,12 +33,14 @@ namespace PaymentAPI.Services
             IPaymentRepository repository,
             ChapterGrpc.ChapterGrpcClient chapterGrpcClient,
             WalletService.WalletServiceClient walletGrpcClient,
+            IRequestClient<SubmitPurchaseCommand> purchaseClient,
             IOptions<TopUpSettings> topUpOptions,
             IOptions<BankSettings> bankOptions)
         {
             _repository = repository;
             _chapterGrpcClient = chapterGrpcClient;
             _walletGrpcClient = walletGrpcClient;
+            _purchaseClient = purchaseClient;
             _topUpSettings = topUpOptions.Value;
             _bankSettings = bankOptions.Value;
         }
@@ -145,102 +150,53 @@ namespace PaymentAPI.Services
             try
             {
                 await _repository.AddTransactionAsync(transaction);
-                var debit = await _walletGrpcClient.DebitCoinAsync(new DebitCoinRequest
-                {
-                    UserId = userId.ToString(),
-                    Amount = (double)price,
-                    ReferenceId = transaction.Id.ToString(),
-                    Description = $"Mở khóa chapter {chapterId}"
-                });
-                remainingBalance = (decimal)debit.Balance;
+                await _repository.CommitTransactionAsync();
 
-                if (!debit.Success)
+                // Fire the Saga
+                var response = await _purchaseClient.GetResponse<PurchaseCompletedEvent, PurchaseFailedEvent>(
+                    new SubmitPurchaseCommand(
+                        CorrelationId: Guid.NewGuid(),
+                        UserId: userId,
+                        ComicId: Guid.Parse(chapterInfo.ComicId),
+                        ChapterId: chapterId,
+                        Price: price,
+                        TransactionId: transaction.Id
+                    ));
+
+                if (response.Is(out Response<PurchaseCompletedEvent> completed))
                 {
-                    transaction.Status = TransactionStatus.Rejected;
-                    transaction.Note = debit.Message;
-                    await _repository.UpdateTransactionAsync(transaction);
-                    await _repository.CommitTransactionAsync();
-                    return new ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>
-                    {
-                        Success = false,
-                        Message = "Số dư Dâu không đủ để mở khóa chapter.",
-                        StatusCode = 402,
-                        Data = new PaymentAPI.DTOs.ChapterPurchaseResultDto
+                    return new ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>(
+                        new PaymentAPI.DTOs.ChapterPurchaseResultDto
                         {
                             ChapterId = chapterId,
                             Price = price,
-                            RemainingBalance = remainingBalance
-                        }
-                    };
+                            RemainingBalance = completed.Message.RemainingBalance,
+                            AlreadyPurchased = false
+                        },
+                        "Mở khóa chapter thành công.");
                 }
-                walletDebited = true;
-
-                await _repository.AddUserPurchaseAsync(new UserPurchase
+                else if (response.Is(out Response<PurchaseFailedEvent> failed))
                 {
-                    UserId = userId,
-                    ComicId = Guid.Parse(chapterInfo.ComicId),
-                    ChapterId = chapterId,
-                    Price = price,
-                    PurchasedAt = DateTime.UtcNow
-                });
-
-                var unlockResult = await _chapterGrpcClient.UnlockChapterAsync(new UnlockChapterRequest
-                {
-                    UserId = userId.ToString(),
-                    ChapterId = chapterId.ToString()
-                });
-
-                if (!unlockResult.Success && !unlockResult.AlreadyPurchased)
-                {
-                    await _walletGrpcClient.AddCoinAsync(new AddCoinRequest
-                    {
-                        UserId = userId.ToString(),
-                        Amount = (double)price,
-                        ReferenceId = CreateRefundReference(transaction.Id).ToString(),
-                        Description = $"Hoàn tiền giao dịch mở khóa lỗi {transaction.Id}"
-                    });
-                    transaction.Status = TransactionStatus.Failed;
-                    transaction.Note = "Chapter unlock failed; wallet debit rolled back.";
-                    await _repository.UpdateTransactionAsync(transaction);
-                    await _repository.CommitTransactionAsync();
                     return ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>.ErrorResponse(
-                        "Không thể mở khóa chapter; số Dâu đã được hoàn lại.", 502);
+                        $"Mở khóa chapter thất bại: {failed.Message.Reason}", 402);
                 }
-
-                transaction.Status = TransactionStatus.Completed;
-                await _repository.UpdateTransactionAsync(transaction);
-                await _repository.CommitTransactionAsync();
-                return new ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>(
-                    new PaymentAPI.DTOs.ChapterPurchaseResultDto
-                    {
-                        ChapterId = chapterId,
-                        Price = price,
-                        RemainingBalance = remainingBalance,
-                        AlreadyPurchased = false
-                    },
-                    "Mở khóa chapter thành công.");
+                
+                return ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>.ErrorResponse(
+                    "Trạng thái giao dịch không xác định.", 500);
             }
-            catch
+            catch (RequestTimeoutException)
             {
-                await _repository.RollbackTransactionAsync();
-                if (walletDebited)
-                {
-                    try
-                    {
-                        await _walletGrpcClient.AddCoinAsync(new AddCoinRequest
-                        {
-                            UserId = userId.ToString(),
-                            Amount = (double)price,
-                            ReferenceId = CreateRefundReference(transaction.Id).ToString(),
-                            Description = $"Hoàn tiền giao dịch mở khóa lỗi {transaction.Id}"
-                        });
-                    }
-                    catch { }
-                }
-                transaction.Note = "Purchase failed; any wallet debit was rolled back.";
+                return ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>.ErrorResponse(
+                    "Giao dịch đang được xử lý ngầm. Vui lòng kiểm tra lại sau.", 202);
+            }
+            catch (Exception)
+            {
+                // Unhandled exception means the command might not have been sent.
+                transaction.Status = TransactionStatus.Failed;
+                transaction.Note = "Lỗi hệ thống khi khởi tạo giao dịch mua.";
                 await _repository.SaveFailedTransactionAsync(transaction);
                 return ApiResponse<PaymentAPI.DTOs.ChapterPurchaseResultDto>.ErrorResponse(
-                    "Mở khóa chapter thất bại; nếu đã trừ Dâu hệ thống đã tự hoàn lại.", 500);
+                    "Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại.", 500);
             }
         }
         public async Task<ApiResponse<PagedResult<PaymentAPI.DTOs.TransactionDto>>> GetTransactionsAsync(

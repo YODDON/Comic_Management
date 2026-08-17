@@ -11,6 +11,10 @@ using ChapterAPI.Protos;
 using WalletAPI.Protos;
 using Microsoft.Extensions.Options;
 using PaymentAPI.Settings;
+using MassTransit;
+using PaymentAPI.Application.Sagas;
+using PaymentAPI.Domain.Entities;
+using PaymentAPI.Application.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +42,43 @@ builder.Services.AddGrpcClient<WalletService.WalletServiceClient>(o => o.Address
 
 builder.Services.Configure<TopUpSettings>(builder.Configuration.GetSection(TopUpSettings.SectionName));
 builder.Services.Configure<BankSettings>(builder.Configuration.GetSection(BankSettings.SectionName));
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<PurchaseCompletedConsumer>();
+    x.AddConsumer<PurchaseFailedConsumer>();
+
+    x.AddSagaStateMachine<PurchaseStateMachine, PurchaseState>()
+        .EntityFrameworkRepository(r =>
+        {
+            r.ExistingDbContext<PaymentDbContext>();
+            r.UseSqlServer();
+        });
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        cfg.Host(rabbitmqHost, "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("payment-purchase-completed", e =>
+        {
+            e.ConfigureConsumer<PurchaseCompletedConsumer>(context);
+        });
+        
+        cfg.ReceiveEndpoint("payment-purchase-failed", e =>
+        {
+            e.ConfigureConsumer<PurchaseFailedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("purchase-state", e =>
+        {
+            e.ConfigureSaga<PurchaseState>(context);
+        });
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

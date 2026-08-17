@@ -10,6 +10,7 @@ This document is the canonical map of current inter-component communication.
 | Internal gRPC | IMPLEMENTED | Synchronous queries and commands between APIs |
 | Internal HTTP client | IMPLEMENTED in one place | SocialAPI comic validation |
 | RabbitMQ integration events | IMPLEMENTED | Mission progress events from SocialAPI/ChapterAPI to MissionAPI |
+| RabbitMQ distributed saga | IMPLEMENTED | Payment orchestration via State Machine |
 | Redis cache | IMPLEMENTED in ComicAPI | Caching heavily accessed comic lists |
 
 ## Frontend → Gateway → REST APIs
@@ -130,6 +131,9 @@ The following events are currently implemented via MassTransit:
 | SocialAPI / ChapterAPI | `MissionActivityRecordedEvent` | MissionAPI | `SharedKernel.Events:MissionActivityRecordedEvent` | `mission-activity-recorded` | Notify MissionAPI of user activities asynchronously |
 | MissionAPI | `MissionRewardGrantedEvent` | WalletAPI | `SharedKernel.Events:MissionRewardGrantedEvent` | `mission-reward-granted` | Credit mission reward asynchronously via Outbox pattern |
 | ChapterAPI | `ComicViewedIntegrationEvent` | ComicAPI | `SharedKernel.Events:ComicViewedIntegrationEvent` | `comic-viewed` | Notify ComicAPI to asynchronously increment comic view count |
+| PaymentAPI (Saga) | `DebitWalletCommand` | WalletAPI | Direct to Queue | `debit-wallet` | Debit wallet balance for purchase via Saga |
+| PaymentAPI (Saga) | `RefundWalletCommand` | WalletAPI | Direct to Queue | `refund-wallet` | Refund wallet balance for failed purchase via Saga |
+| PaymentAPI (Saga) | `UnlockChapterCommand` | ChapterAPI | Direct to Queue | `unlock-chapter` | Unlock purchased chapter via Saga |
 
 
 ## Reliability characteristics
@@ -138,7 +142,7 @@ The following events are currently implemented via MassTransit:
 |---|---|---|
 | Wallet credit/debit | Serializable local DB transaction + unique `ReferenceId` | Only protects WalletDB; no distributed transaction |
 | Deposit webhook | Pending-state check + wallet reference based on payment transaction ID | Payment completion follows synchronous wallet call; no Outbox |
-| Chapter purchase | PaymentDB local transaction + Wallet gRPC + Chapter gRPC + best-effort refund | Process/network failure can leave cross-service partial state |
+| Chapter purchase | MassTransit Saga State Machine + Distributed commands | Guaranteed eventual consistency; compensates on failure |
 | Mission activity | Unique mission-activity index | Synchronous notification/snapshot calls; no queue retry |
 | Mission reward | RabbitMQ Outbox + Wallet idempotency reference | Asynchronous event delivery using Outbox pattern for guaranteed delivery |
 

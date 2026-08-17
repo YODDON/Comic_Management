@@ -10,6 +10,7 @@ using ChapterAPI.Repositories;
 using ChapterAPI.Services;
 using MissionAPI.Protos;
 using MassTransit;
+using ChapterAPI.Application.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,12 +51,19 @@ builder.Services.AddMassTransit(x =>
         o.UseBusOutbox();
     });
 
+    x.AddConsumer<UnlockChapterConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         var rabbitmqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? builder.Configuration["RabbitMQ:Host"] ?? "localhost";
         cfg.Host(rabbitmqHost, "/", h => {
             h.Username("guest");
             h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("unlock-chapter", e =>
+        {
+            e.ConfigureConsumer<UnlockChapterConsumer>(context);
         });
     });
 });

@@ -5,6 +5,7 @@ using WalletAPI.Repositories;
 using WalletAPI.Services;
 using SharedKernel.Extensions;
 using MassTransit;
+using WalletAPI.Application.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,8 @@ builder.Services.AddMassTransit(x =>
     });
 
     x.AddConsumer<WalletAPI.Consumers.MissionRewardGrantedConsumer>();
+    x.AddConsumer<DebitWalletConsumer>();
+    x.AddConsumer<RefundWalletConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -55,6 +58,16 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("mission-reward-granted", e =>
         {
             e.ConfigureConsumer<WalletAPI.Consumers.MissionRewardGrantedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("debit-wallet", e =>
+        {
+            e.ConfigureConsumer<DebitWalletConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("refund-wallet", e =>
+        {
+            e.ConfigureConsumer<RefundWalletConsumer>(context);
         });
     });
 });

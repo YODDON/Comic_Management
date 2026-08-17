@@ -48,7 +48,7 @@ Canonical details:
 | SMTP + Google Auth | Email workflows and Google login in UserAPI |
 | VietQR + SePay | Deposit QR generation and bank webhook processing in PaymentAPI |
 | Redis | IMPLEMENTED: Cache-Aside pattern for ComicAPI endpoints |
-| RabbitMQ | IMPLEMENTED: Mission activity events via MassTransit |
+| RabbitMQ | IMPLEMENTED: Mission activity events via MassTransit AND Payment Saga State Machine |
 
 ## Architecture inside services
 

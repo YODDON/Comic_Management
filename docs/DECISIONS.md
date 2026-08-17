@@ -227,3 +227,13 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We migrated BannerAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure). Specific infrastructure dependencies such as `CloudinaryDotNet` were isolated in the Infrastructure project, exposing only `ICloudinaryService` to the Application layer.
 
 **Consequences:** Improved maintainability, consistent architecture, and isolated external dependencies.
+
+## ADR-009 — Saga State Machine for Payment Orchestration
+
+**Status:** Implemented
+
+**Context:** The chapter purchase flow (`PaymentAPI` -> `WalletAPI` -> `ChapterAPI`) previously used synchronous gRPC calls. A failure in the final `ChapterAPI` call required a synchronous best-effort rollback in `WalletAPI`, which could result in a partial failure if the network dropped.
+
+**Decision:** We implemented a Distributed Saga State Machine using `MassTransit.StateMachine` in `PaymentAPI`. The Saga orchestrates `DebitWalletCommand`, `UnlockChapterCommand`, and compensating `RefundWalletCommand` asynchronously.
+
+**Consequences:** Guaranteed eventual consistency. Synchronous gRPC is replaced with RabbitMQ for the transaction execution. The client API endpoint waits for the Saga's completion event via an `IRequestClient`, blending async reliability with synchronous UX.
