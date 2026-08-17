@@ -31,18 +31,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Controllers\" />
-	  <Folder Include="Data\" />
-	  <Folder Include="DTOs\" />
-	  <Folder Include="Interfaces\" />
-	  <Folder Include="Mappings\" />
-	  <Folder Include="Settings\" />
-	  <Folder Include="Services\" />
-	  <Folder Include="Repositories\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\WalletAPI.Application\WalletAPI.Application.csproj" />
+	  <ProjectReference Include="..\WalletAPI.Infrastructure\WalletAPI.Infrastructure.csproj" />
 	</ItemGroup>
 
 </Project>

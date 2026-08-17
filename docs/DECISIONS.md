@@ -197,3 +197,13 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We migrated PaymentAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure), segregating concerns such as Settings into the Application layer to avoid compilation issues.
 
 **Consequences:** Improved maintainability and consistent architecture.
+
+## [ADR-004] WalletAPI Clean Architecture Migration
+
+**Status:** Implemented
+
+**Context:** Following ADR-004, WalletAPI needed to be migrated to Clean Architecture to maintain consistency across the solution.
+
+**Decision:** We migrated WalletAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure), appropriately moving IWalletRepository to Application layer since it acts as a use-case specific query returning DTOs.
+
+**Consequences:** Improved maintainability and consistent architecture.
