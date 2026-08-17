@@ -30,7 +30,9 @@ if (!string.IsNullOrEmpty(paymentConn))
 }
 
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+// Add MediatR for CQRS
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PaymentAPI.Application.Features.Payments.Queries.GetBalanceQuery).Assembly));
 
 var chapterApiUrl = Environment.GetEnvironmentVariable("CHAPTER_API_URL") ?? builder.Configuration["GrpcEndpoints:ChapterAPI"] ?? "https://localhost:7147";
 builder.Services.AddGrpcClient<ChapterGrpc.ChapterGrpcClient>(o =>
