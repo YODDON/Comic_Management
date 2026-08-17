@@ -1,5 +1,7 @@
+using BannerAPI.Application.Features.Banners.Commands;
+using BannerAPI.Application.Features.Banners.Queries;
 using BannerAPI.DTOs;
-using BannerAPI.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,18 +11,18 @@ namespace BannerAPI.Controllers;
 [Route("banners")]
 public class BannersController : ControllerBase
 {
-    private readonly IBannerService _bannerService;
+    private readonly IMediator _mediator;
 
-    public BannersController(IBannerService bannerService)
+    public BannersController(IMediator mediator)
     {
-        _bannerService = bannerService;
+        _mediator = mediator;
     }
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetActive()
     {
-        var response = await _bannerService.GetActiveAsync();
+        var response = await _mediator.Send(new GetActiveBannersQuery());
         return StatusCode(response.StatusCode, response);
     }
 
@@ -28,7 +30,7 @@ public class BannersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAll()
     {
-        var response = await _bannerService.GetAllAsync();
+        var response = await _mediator.Send(new GetAllBannersQuery());
         return StatusCode(response.StatusCode, response);
     }
 
@@ -36,7 +38,7 @@ public class BannersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var response = await _bannerService.GetByIdAsync(id);
+        var response = await _mediator.Send(new GetBannerByIdQuery(id));
         return StatusCode(response.StatusCode, response);
     }
 
@@ -44,7 +46,7 @@ public class BannersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create([FromBody] CreateBannerRequestDto request)
     {
-        var response = await _bannerService.CreateAsync(request);
+        var response = await _mediator.Send(new CreateBannerCommand(request));
         return StatusCode(response.StatusCode, response);
     }
 
@@ -54,7 +56,7 @@ public class BannersController : ControllerBase
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Upload([FromForm] UploadBannerImageRequestDto request)
     {
-        var response = await _bannerService.UploadImageAsync(request.File);
+        var response = await _mediator.Send(new UploadBannerImageCommand(request.File));
         return response.Success
             ? Ok(new { data = response.Data })
             : StatusCode(response.StatusCode, new { message = response.Message });
@@ -64,7 +66,7 @@ public class BannersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBannerRequestDto request)
     {
-        var response = await _bannerService.UpdateAsync(id, request);
+        var response = await _mediator.Send(new UpdateBannerCommand(id, request));
         return StatusCode(response.StatusCode, response);
     }
 
@@ -72,7 +74,7 @@ public class BannersController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var response = await _bannerService.DeleteAsync(id);
+        var response = await _mediator.Send(new DeleteBannerCommand(id));
         return StatusCode(response.StatusCode, response);
     }
 }

@@ -90,13 +90,12 @@ Planning/proposal documents
 - JWT Bearer authentication is configured at the Gateway and business APIs; authorization also exists on controllers.
 - RabbitMQ and Redis containers exist in Docker Compose, but application messaging/cache integration is not implemented.
 - n8n + LibreTranslate support text translation; Cloudinary, SMTP/Google Auth, and SePay/VietQR are used by specific services.
+- CQRS command/query handlers and MediatR-based dispatch are being incrementally rolled out (currently implemented in `BannerAPI`).
 
 ### PLANNED OR PROPOSED, NOT CURRENT
 
 - Physical `.API/.Application/.Domain/.Infrastructure` project splits.
-- CQRS command/query handlers as a system-wide pattern.
 - Rich DDD aggregates, Saga, and persisted state machines.
-- MediatR-based dispatch.
 - RabbitMQ integration events, Outbox/Inbox, DLQ, or event correlation envelopes.
 - OpenTelemetry-based distributed observability.
 - Redis application caching.

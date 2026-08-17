@@ -12,8 +12,9 @@ builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IBannerRepository, BannerRepository>();
-builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(BannerAPI.Application.Features.Banners.Commands.CreateBannerCommand).Assembly));
 
 var bannerConn = Environment.GetEnvironmentVariable("BANNER_DB_CONNECTION")
     ?? builder.Configuration.GetConnectionString("BannerConnection")

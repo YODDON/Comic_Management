@@ -237,3 +237,16 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We implemented a Distributed Saga State Machine using `MassTransit.StateMachine` in `PaymentAPI`. The Saga orchestrates `DebitWalletCommand`, `UnlockChapterCommand`, and compensating `RefundWalletCommand` asynchronously.
 
 **Consequences:** Guaranteed eventual consistency. Synchronous gRPC is replaced with RabbitMQ for the transaction execution. The client API endpoint waits for the Saga's completion event via an `IRequestClient`, blending async reliability with synchronous UX.
+
+## ADR-010 — CQRS and MediatR Pilot for Microservices
+
+**Status:** Implemented (Pilot in `BannerAPI`)
+
+**Context:** The system required a clearer separation between read (Query) and write (Command) operations to improve maintainability, testing, and scalability as business logic grew. 
+
+**Decision:** We adopted CQRS and `MediatR` as the system-wide pattern for dispatching commands and queries, starting with `BannerAPI` as a pilot. `BannerService` was replaced by individual `IRequestHandler` implementations for each Command and Query.
+
+**Consequences:** 
+- Controllers inject `IMediator` instead of heavy service interfaces.
+- Business operations are encapsulated in single-responsibility classes.
+- This pattern will be incrementally rolled out to other services like `ComicAPI` and `UserAPI` as authorized.
