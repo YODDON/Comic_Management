@@ -1,6 +1,7 @@
 using MassTransit;
 using MissionAPI.Interfaces;
 using SharedKernel.Events;
+using Microsoft.Extensions.Logging;
 
 namespace MissionAPI.Consumers;
 

@@ -3,6 +3,7 @@ using Grpc.Core;
 using MissionAPI.Interfaces;
 using SharedKernel.Enums;
 using SocialAPI.Protos;
+using Microsoft.Extensions.Logging;
 
 namespace MissionAPI.Services;
 

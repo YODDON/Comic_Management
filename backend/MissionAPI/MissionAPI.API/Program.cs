@@ -29,7 +29,7 @@ builder.Services.AddScoped<MissionAPI.Interfaces.INotificationRepository, Missio
 builder.Services.AddScoped<MissionAPI.Interfaces.INotificationService, MissionAPI.Services.NotificationService>();
 builder.Services.AddScoped<MissionAPI.Interfaces.IUploadRepository, MissionAPI.Repositories.UploadRepository>();
 builder.Services.AddScoped<MissionAPI.Interfaces.IUploadService, MissionAPI.Services.UploadService>();
-builder.Services.AddScoped<MissionAPI.Interfaces.IWalletGrpcClient, MissionAPI.Services.WalletGrpcClient>();
+
 builder.Services.AddScoped<MissionAPI.Interfaces.ICloudinaryService, MissionAPI.Services.CloudinaryService>();
 builder.Services.Configure<MissionAPI.Settings.CloudinarySettings>(options =>
 {

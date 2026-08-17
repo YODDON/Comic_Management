@@ -178,3 +178,12 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 
 **Consequences:** Improved maintainability and consistent architecture with ComicAPI, UserAPI, and MissionAPI.
 
+## [ADR-004] MissionAPI Clean Architecture Migration
+
+**Status:** Implemented
+
+**Context:** Following ADR-004, MissionAPI needed to be migrated to Clean Architecture to maintain consistency across the solution. Furthermore, the synchronous WalletGrpcClient implementation in MissionAPI was considered dead code after the transition to the RabbitMQ Outbox pattern.
+
+**Decision:** We migrated MissionAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure). We also permanently removed the dead WalletGrpcClient code to reduce circular dependencies.
+
+**Consequences:** Improved maintainability, consistent architecture, and removal of dead RPC calls.

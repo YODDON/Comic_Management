@@ -14,10 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\wallet.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\mission_progress.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\chapter_activity.proto" GrpcServices="Client" />
-    <Protobuf Include="Protos\social_activity.proto" GrpcServices="Client" />
   </ItemGroup>
 
 	<ItemGroup>
@@ -37,18 +34,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Controllers\" />
-	  <Folder Include="Data\" />
-	  <Folder Include="DTOs\" />
-	  <Folder Include="Interfaces\" />
-	  <Folder Include="Mappings\" />
-	  <Folder Include="Settings\" />
-	  <Folder Include="Services\" />
-	  <Folder Include="Repositories\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\MissionAPI.Application\MissionAPI.Application.csproj" />
+	  <ProjectReference Include="..\MissionAPI.Infrastructure\MissionAPI.Infrastructure.csproj" />
 	</ItemGroup>
 
 </Project>
