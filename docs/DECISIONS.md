@@ -207,3 +207,13 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We migrated WalletAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure), appropriately moving IWalletRepository to Application layer since it acts as a use-case specific query returning DTOs.
 
 **Consequences:** Improved maintainability and consistent architecture.
+
+## [ADR-004] SocialAPI Clean Architecture Migration
+
+**Status:** Implemented
+
+**Context:** Following ADR-004, SocialAPI needed to be migrated to Clean Architecture to maintain consistency across the solution.
+
+**Decision:** We migrated SocialAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure). Application interfaces such as `IComicValidator` and `IMissionProgressNotifier` were correctly segregated into the Application layer, while data-centric repository interfaces stayed in the Domain or Application layers based on whether they returned DTOs.
+
+**Consequences:** Improved maintainability and consistent architecture.

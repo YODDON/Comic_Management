@@ -1,4 +1,5 @@
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using SharedKernel.Enums;
 using SharedKernel.Events;
 using SocialAPI.Interfaces;

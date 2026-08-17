@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Logging;
 using SocialAPI.Interfaces;
 
 namespace SocialAPI.Services

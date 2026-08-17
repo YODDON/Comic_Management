@@ -26,26 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Protobuf Include="Protos\mission_progress.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\activity_snapshot.proto" GrpcServices="Server" />
   </ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Data\" />
-	  <Folder Include="DTOs\" />
-	  <Folder Include="Interfaces\" />
-	  <Folder Include="Mappings\" />
-	  <Folder Include="Settings\" />
-	  <Folder Include="Services\" />
-	  <Folder Include="Repositories\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\SocialAPI.Application\SocialAPI.Application.csproj" />
+	  <ProjectReference Include="..\SocialAPI.Infrastructure\SocialAPI.Infrastructure.csproj" />
 	</ItemGroup>
 
 </Project>
