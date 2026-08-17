@@ -22,13 +22,11 @@ namespace MissionAPI.Application.Features.Missions.Commands
     {
         private readonly IMissionRepository _missionRepository;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IMissionActivitySyncService _activitySyncService;
 
-        public CreateMissionCommandHandler(IMissionRepository missionRepository, IPublishEndpoint publishEndpoint, IMissionActivitySyncService activitySyncService)
+        public CreateMissionCommandHandler(IMissionRepository missionRepository, IPublishEndpoint publishEndpoint)
         {
             _missionRepository = missionRepository;
             _publishEndpoint = publishEndpoint;
-            _activitySyncService = activitySyncService;
         }
 
         public async Task<ApiResponse<MissionDto>> Handle(CreateMissionCommand request, CancellationToken cancellationToken)

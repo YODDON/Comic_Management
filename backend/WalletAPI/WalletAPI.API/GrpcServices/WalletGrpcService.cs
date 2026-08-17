@@ -11,9 +11,9 @@ namespace WalletAPI.GrpcServices;
 
 public class WalletGrpcService : WalletService.WalletServiceBase
 {
-    private readonly IWalletApplicationService _walletService;
+    private readonly IMediator _mediator;
 
-    public WalletGrpcService(IWalletApplicationService walletService) => _walletService = walletService;
+    public WalletGrpcService(IMediator mediator) => _mediator = mediator;
 
     public override async Task<AddCoinResponse> AddCoin(AddCoinRequest request, ServerCallContext context)
     {
@@ -21,8 +21,14 @@ public class WalletGrpcService : WalletService.WalletServiceBase
                 out var userId, out var amount, out var referenceId))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid wallet request."));
 
-        var result = await _walletService.AddCoinAsync(
-            userId, amount, referenceId, request.CreditType, request.Description);
+        var result = await _mediator.Send(new AddCoinCommand
+        {
+            UserId = userId,
+            Amount = amount,
+            ReferenceId = referenceId,
+            CreditType = request.CreditType,
+            Description = request.Description
+        });
         return new AddCoinResponse
         {
             Success = true,
@@ -36,8 +42,14 @@ public class WalletGrpcService : WalletService.WalletServiceBase
                 out var userId, out var amount, out var referenceId))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid wallet request."));
 
-        var result = await _walletService.DebitCoinAsync(
-            userId, amount, referenceId, request.Description);
+        var result = await _mediator.Send(new DebitCoinCommand
+        {
+            UserId = userId,
+            Amount = amount,
+            ReferenceId = referenceId,
+            Description = request.Description
+        });
+        
         return new DebitCoinResponse
         {
             Success = result.Success,

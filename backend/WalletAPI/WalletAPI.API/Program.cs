@@ -41,6 +41,7 @@ builder.Services.AddMassTransit(x =>
     {
         o.UseSqlServer();
         o.UseBusOutbox();
+        o.IsolationLevel = System.Data.IsolationLevel.Serializable;
     });
 
     x.AddConsumer<WalletAPI.Consumers.MissionRewardGrantedConsumer>();

@@ -28,23 +28,23 @@ namespace WalletAPI.Application.Consumers
             var bytes = msg.TransactionId.ToByteArray();
             bytes[15] ^= 0xFF;
             var referenceId = new Guid(bytes);
-
             try
             {
                 var result = await _repository.CreditAsync(
                     msg.UserId,
                     msg.Amount,
-                    referenceId,
+                    msg.TransactionId,
                     TransactionType.Refund,
-                    $"Hoàn tiền giao dịch mở khóa lỗi qua Saga, Transaction: {msg.TransactionId}");
+                    $"Hoàn tiền do lỗi mở chapter, Transaction: {msg.TransactionId}");
 
-                // Even if not Success (e.g. idempotency failure means already credited), we publish Refunded.
-                // CreditAsync handles idempotency gracefully.
                 await context.Publish(new WalletRefundedEvent(msg.CorrelationId));
+                await _repository.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // If it fails, MassTransit will retry based on its configuration, which is standard for Compensating Actions.
+                // In a real production system, log this failure or move to DLQ.
+                // It means the saga cannot complete the refund gracefully.
+                Console.WriteLine($"[CRITICAL] Hoàn tiền thất bại cho giao dịch {msg.TransactionId}: {ex.Message}");
                 throw;
             }
         }

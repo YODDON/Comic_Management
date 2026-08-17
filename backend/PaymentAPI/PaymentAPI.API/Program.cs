@@ -47,6 +47,12 @@ builder.Services.Configure<BankSettings>(builder.Configuration.GetSection(BankSe
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddEntityFrameworkOutbox<PaymentDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+
     x.AddConsumer<PurchaseCompletedConsumer>();
     x.AddConsumer<PurchaseFailedConsumer>();
 

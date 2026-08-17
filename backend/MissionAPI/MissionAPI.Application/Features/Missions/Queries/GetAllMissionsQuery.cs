@@ -21,13 +21,11 @@ namespace MissionAPI.Application.Features.Missions.Queries
     {
         private readonly IMissionRepository _missionRepository;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IMissionActivitySyncService _activitySyncService;
 
-        public GetAllMissionsQueryHandler(IMissionRepository missionRepository, IPublishEndpoint publishEndpoint, IMissionActivitySyncService activitySyncService)
+        public GetAllMissionsQueryHandler(IMissionRepository missionRepository, IPublishEndpoint publishEndpoint)
         {
             _missionRepository = missionRepository;
             _publishEndpoint = publishEndpoint;
-            _activitySyncService = activitySyncService;
         }
 
         public async Task<ApiResponse<IEnumerable<MissionDto>>> Handle(GetAllMissionsQuery request, CancellationToken cancellationToken)
