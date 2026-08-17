@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using PaymentAPI.DTOs;
-using PaymentAPI.Interfaces;
+using MediatR;
+using PaymentAPI.Application.Features.Payments.Queries;
+using PaymentAPI.Application.Features.Payments.Commands;
 using PaymentAPI.Services;
 using PaymentAPI.Settings;
 
@@ -15,11 +17,11 @@ namespace PaymentAPI.Controllers
     [ApiController]
     public class PaymentsController : ControllerBase
     {
-        private readonly IPaymentService _paymentService;
+        private readonly IMediator _mediator;
 
-        public PaymentsController(IPaymentService paymentService)
+        public PaymentsController(IMediator mediator)
         {
-            _paymentService = paymentService;
+            _mediator = mediator;
         }
 
         [HttpPost("purchased-chapter")]
@@ -32,7 +34,7 @@ namespace PaymentAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var response = await _paymentService.PurchaseChapterAsync(userId, request.ChapterId);
+            var response = await _mediator.Send(new PurchaseChapterCommand { UserId = userId, ChapterId = request.ChapterId });
             return StatusCode(response.StatusCode, response);
         }
         [HttpGet("transactions")]
@@ -60,13 +62,7 @@ namespace PaymentAPI.Controllers
 
             int? targetUserId = isAdmin ? userId : currentUserId;
 
-            var response = await _paymentService.GetTransactionsAsync(
-                targetUserId,
-                type,
-                status,
-                isAdmin ? search : null,
-                pageNumber,
-                pageSize);
+            var response = await _mediator.Send(new GetTransactionsQuery { UserId = targetUserId, Type = type, Status = status, Search = isAdmin ? search : null, PageNumber = pageNumber, PageSize = pageSize });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -74,7 +70,7 @@ namespace PaymentAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> CheckTransaction(Guid id)
         {
-            var response = await _paymentService.GetTransactionByIdAsync(id);
+            var response = await _mediator.Send(new GetTransactionByIdQuery { Id = id });
             if (response.Data == null)
             {
                 return StatusCode(response.StatusCode, response);
@@ -109,7 +105,7 @@ namespace PaymentAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var response = await _paymentService.CreateDepositAsync(userId, request.Amount);
+            var response = await _mediator.Send(new CreateDepositCommand { UserId = userId, Amount = request.Amount });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -134,7 +130,7 @@ namespace PaymentAPI.Controllers
                 return Unauthorized(new { Message = "Invalid SePay webhook token." });
             }
 
-            var response = await _paymentService.ProcessSePayWebhookAsync(request);
+            var response = await _mediator.Send(new ProcessSePayWebhookCommand { Request = request });
 
             // Always HTTP 200 once authenticated: SePay reads our verdict from the body, and a non-200
             // looks like a delivery failure that triggers pointless retries of a call we already judged.

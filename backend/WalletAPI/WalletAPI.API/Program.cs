@@ -17,11 +17,11 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddGrpc();
 builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
-builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<IWithdrawRepository, WithdrawRepository>();
-builder.Services.AddScoped<IWithdrawService, WithdrawService>();
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
-builder.Services.AddScoped<IWalletApplicationService, WalletApplicationService>();
+
+// Add MediatR for CQRS
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WalletAPI.Application.Features.Currency.Queries.GetHistoryQuery).Assembly));
 
 var walletConn = Environment.GetEnvironmentVariable("WALLET_DB_CONNECTION");
 if (string.IsNullOrEmpty(walletConn)) walletConn = builder.Configuration.GetConnectionString("WalletConnection");

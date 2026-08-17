@@ -1,5 +1,10 @@
 using Grpc.Core;
 using WalletAPI.Interfaces;
+using MediatR;
+using WalletAPI.Application.Features.Currency.Queries;
+using WalletAPI.Application.Features.Wallet.Commands;
+using WalletAPI.Application.Features.Withdraw.Commands;
+using WalletAPI.Application.Features.Withdraw.Queries;
 using WalletAPI.Protos;
 
 namespace WalletAPI.GrpcServices;

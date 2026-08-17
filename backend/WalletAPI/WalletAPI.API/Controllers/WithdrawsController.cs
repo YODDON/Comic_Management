@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WalletAPI.DTOs;
 using WalletAPI.Interfaces;
+using MediatR;
+using WalletAPI.Application.Features.Currency.Queries;
+using WalletAPI.Application.Features.Wallet.Commands;
+using WalletAPI.Application.Features.Withdraw.Commands;
+using WalletAPI.Application.Features.Withdraw.Queries;
 using SharedKernel.Enums;
 
 namespace WalletAPI.Controllers;
@@ -12,11 +17,11 @@ namespace WalletAPI.Controllers;
 [Authorize(Roles = "Admin,Reader")]
 public class WithdrawsController : ControllerBase
 {
-    private readonly IWithdrawService _withdrawService;
+    private readonly IMediator _mediator;
 
-    public WithdrawsController(IWithdrawService withdrawService)
+    public WithdrawsController(IMediator mediator)
     {
-        _withdrawService = withdrawService;
+        _mediator = mediator;
     }
 
     [HttpPost]
@@ -29,7 +34,7 @@ public class WithdrawsController : ControllerBase
             return Unauthorized(new { message = "Invalid token." });
         }
 
-        var response = await _withdrawService.CreateAsync(userId, request);
+        var response = await _mediator.Send(new CreateWithdrawCommand { UserId = userId, Request = request });
         return StatusCode(response.StatusCode, response);
     }
 
@@ -46,7 +51,7 @@ public class WithdrawsController : ControllerBase
             return Unauthorized(new { message = "Invalid token." });
         }
 
-        var response = await _withdrawService.GetWithdrawableAsync(userId);
+        var response = await _mediator.Send(new GetWithdrawableQuery { UserId = userId });
         return StatusCode(response.StatusCode, response);
     }
 
@@ -61,7 +66,7 @@ public class WithdrawsController : ControllerBase
             return Unauthorized(new { message = "Invalid token." });
         }
 
-        var response = await _withdrawService.GetMineAsync(userId, pageNumber, pageSize);
+        var response = await _mediator.Send(new GetMyWithdrawsQuery { UserId = userId, PageNumber = pageNumber, PageSize = pageSize });
         return StatusCode(response.StatusCode, response);
     }
 
@@ -73,7 +78,7 @@ public class WithdrawsController : ControllerBase
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10)
     {
-        var response = await _withdrawService.GetAdminAsync(status, search, pageNumber, pageSize);
+        var response = await _mediator.Send(new GetAdminWithdrawsQuery { Status = status, Search = search, PageNumber = pageNumber, PageSize = pageSize });
         return StatusCode(response.StatusCode, response);
     }
 
@@ -81,7 +86,7 @@ public class WithdrawsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateWithdrawStatusRequestDto request)
     {
-        var response = await _withdrawService.UpdateStatusAsync(id, request);
+        var response = await _mediator.Send(new UpdateWithdrawStatusCommand { Id = id, Request = request });
         return StatusCode(response.StatusCode, response);
     }
 }

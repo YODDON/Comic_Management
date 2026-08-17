@@ -2,6 +2,11 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WalletAPI.Interfaces;
+using MediatR;
+using WalletAPI.Application.Features.Currency.Queries;
+using WalletAPI.Application.Features.Wallet.Commands;
+using WalletAPI.Application.Features.Withdraw.Commands;
+using WalletAPI.Application.Features.Withdraw.Queries;
 using WalletAPI.DTOs;
 
 namespace WalletAPI.Controllers;
@@ -11,11 +16,11 @@ namespace WalletAPI.Controllers;
 [Authorize(Roles = "Admin,Reader")]
 public class CurrencyController : ControllerBase
 {
-    private readonly ICurrencyService _currencyService;
+    private readonly IMediator _mediator;
 
-    public CurrencyController(ICurrencyService currencyService)
+    public CurrencyController(IMediator mediator)
     {
-        _currencyService = currencyService;
+        _mediator = mediator;
     }
 
     [HttpGet("history")]
@@ -29,7 +34,7 @@ public class CurrencyController : ControllerBase
             return Unauthorized(new { message = "Invalid token." });
         }
 
-        var response = await _currencyService.GetHistoryAsync(userId, pageNumber, pageSize);
+        var response = await _mediator.Send(new GetHistoryQuery { UserId = userId, PageNumber = pageNumber, PageSize = pageSize });
         return StatusCode(response.StatusCode, response);
     }
 
@@ -37,7 +42,7 @@ public class CurrencyController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateEntry([FromBody] CreateCurrencyEntryRequestDto request)
     {
-        var response = await _currencyService.CreateEntryAsync(request);
+        var response = await _mediator.Send(new WalletAPI.Application.Features.Currency.Commands.CreateCurrencyEntryCommand { Request = request });
         return StatusCode(response.StatusCode, response);
     }
 }

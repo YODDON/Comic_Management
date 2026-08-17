@@ -4,6 +4,11 @@ using MassTransit;
 using SharedKernel.Contracts.Purchase;
 using SharedKernel.Enums;
 using WalletAPI.Interfaces;
+using MediatR;
+using WalletAPI.Application.Features.Currency.Queries;
+using WalletAPI.Application.Features.Wallet.Commands;
+using WalletAPI.Application.Features.Withdraw.Commands;
+using WalletAPI.Application.Features.Withdraw.Queries;
 
 namespace WalletAPI.Application.Consumers
 {

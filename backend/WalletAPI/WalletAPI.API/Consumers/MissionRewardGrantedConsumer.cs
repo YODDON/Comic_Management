@@ -1,6 +1,11 @@
 using MassTransit;
 using SharedKernel.Events;
 using WalletAPI.Interfaces;
+using MediatR;
+using WalletAPI.Application.Features.Currency.Queries;
+using WalletAPI.Application.Features.Wallet.Commands;
+using WalletAPI.Application.Features.Withdraw.Commands;
+using WalletAPI.Application.Features.Withdraw.Queries;
 
 namespace WalletAPI.Consumers;
 
