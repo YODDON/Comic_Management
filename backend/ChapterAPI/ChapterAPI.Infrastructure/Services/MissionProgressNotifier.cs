@@ -1,5 +1,6 @@
 using ChapterAPI.Interfaces;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using SharedKernel.Enums;
 using SharedKernel.Events;
 

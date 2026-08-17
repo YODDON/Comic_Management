@@ -31,24 +31,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-    <Protobuf Include="Protos\comic.proto" GrpcServices="Client" />
     <Protobuf Include="Protos\chapter.proto" GrpcServices="Server" />
-    <Protobuf Include="Protos\mission_progress.proto" GrpcServices="Client" />
   </ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Controllers\" />
-	  <Folder Include="Data\" />
-	  <Folder Include="DTOs\" />
-	  <Folder Include="Interfaces\" />
-	  <Folder Include="Mappings\" />
-	  <Folder Include="Settings\" />
-	  <Folder Include="Services\" />
-	  <Folder Include="Repositories\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\..\SharedKernel\SharedKernel.csproj" />
+	  <ProjectReference Include="..\ChapterAPI.Application\ChapterAPI.Application.csproj" />
+	  <ProjectReference Include="..\ChapterAPI.Infrastructure\ChapterAPI.Infrastructure.csproj" />
 	</ItemGroup>
 
 </Project>

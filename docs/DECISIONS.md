@@ -167,3 +167,14 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We migrated UserAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure), updating namespaces, project references, and moving classes appropriately.
 
 **Consequences:** Improved maintainability and consistent architecture with ComicAPI. Fixed any technical debt related to layered structure inside a single project.
+
+## [ADR-004] ChapterAPI Clean Architecture Migration
+
+**Status:** Implemented
+
+**Context:** Following ADR-004, ChapterAPI needed to be migrated to Clean Architecture to maintain consistency across the solution.
+
+**Decision:** We migrated ChapterAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure).
+
+**Consequences:** Improved maintainability and consistent architecture with ComicAPI, UserAPI, and MissionAPI.
+
