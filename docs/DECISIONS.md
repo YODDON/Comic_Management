@@ -187,3 +187,13 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We migrated MissionAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure). We also permanently removed the dead WalletGrpcClient code to reduce circular dependencies.
 
 **Consequences:** Improved maintainability, consistent architecture, and removal of dead RPC calls.
+
+## [ADR-004] PaymentAPI Clean Architecture Migration
+
+**Status:** Implemented
+
+**Context:** Following ADR-004, PaymentAPI needed to be migrated to Clean Architecture to maintain consistency across the solution.
+
+**Decision:** We migrated PaymentAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure), segregating concerns such as Settings into the Application layer to avoid compilation issues.
+
+**Consequences:** Improved maintainability and consistent architecture.
