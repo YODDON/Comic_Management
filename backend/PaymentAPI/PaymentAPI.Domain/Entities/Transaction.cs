@@ -13,6 +13,7 @@ namespace PaymentAPI.Entities
         public string CurrencyType { get; set; } = string.Empty;
         public TransactionStatus Status { get; set; } = TransactionStatus.Pending;
         public string? Note { get; set; }
+        public string? ExternalTransactionId { get; set; }
         public string PaymentMethod { get; set; } = string.Empty;
         public string TransactionCode { get; set; } = string.Empty;
     }
