@@ -3,20 +3,22 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SocialAPI.Interfaces;
+using MediatR;
+using SocialAPI.Application.Features.Follows.Commands;
+using SocialAPI.Application.Features.Follows.Queries;
 
-namespace SocialAPI.Controllers
+namespace SocialAPI.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin,Reader")]
     public class FollowsController : ControllerBase
     {
-        private readonly IFollowService _followService;
+        private readonly IMediator _mediator;
 
-        public FollowsController(IFollowService followService)
+        public FollowsController(IMediator mediator)
         {
-            _followService = followService;
+            _mediator = mediator;
         }
 
         [HttpGet("me")]
@@ -28,7 +30,7 @@ namespace SocialAPI.Controllers
                 return Unauthorized(new { message = "Unauthorized" });
             }
 
-            var response = await _followService.GetUserFollowsAsync(userId, page, pageSize);
+            var response = await _mediator.Send(new GetUserFollowsQuery { UserId = userId, Page = page, PageSize = pageSize });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -41,7 +43,7 @@ namespace SocialAPI.Controllers
                 return Unauthorized(new { message = "Unauthorized" });
             }
 
-            var response = await _followService.AddFollowAsync(userId, followingId);
+            var response = await _mediator.Send(new AddFollowCommand { UserId = userId, FollowingId = followingId });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -54,7 +56,7 @@ namespace SocialAPI.Controllers
                 return Unauthorized(new { message = "Unauthorized" });
             }
 
-            var response = await _followService.RemoveFollowAsync(userId, followingId);
+            var response = await _mediator.Send(new RemoveFollowCommand { UserId = userId, FollowingId = followingId });
             return StatusCode(response.StatusCode, response);
         }
     }

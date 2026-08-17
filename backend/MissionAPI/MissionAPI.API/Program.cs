@@ -23,12 +23,12 @@ if (!string.IsNullOrEmpty(missionConn))
 }
 
 builder.Services.AddScoped<MissionAPI.Interfaces.IMissionRepository, MissionAPI.Repositories.MissionRepository>();
-builder.Services.AddScoped<MissionAPI.Interfaces.IMissionService, MissionAPI.Services.MissionService>();
-builder.Services.AddScoped<MissionAPI.Interfaces.IMissionActivitySyncService, MissionAPI.Services.MissionActivitySyncService>();
 builder.Services.AddScoped<MissionAPI.Interfaces.INotificationRepository, MissionAPI.Repositories.NotificationRepository>();
-builder.Services.AddScoped<MissionAPI.Interfaces.INotificationService, MissionAPI.Services.NotificationService>();
 builder.Services.AddScoped<MissionAPI.Interfaces.IUploadRepository, MissionAPI.Repositories.UploadRepository>();
 builder.Services.AddScoped<MissionAPI.Interfaces.IUploadService, MissionAPI.Services.UploadService>();
+
+// Add MediatR for CQRS
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(MissionAPI.Application.Features.Missions.Queries.GetAllMissionsQuery).Assembly));
 
 builder.Services.AddScoped<MissionAPI.Interfaces.ICloudinaryService, MissionAPI.Services.CloudinaryService>();
 builder.Services.Configure<MissionAPI.Settings.CloudinarySettings>(options =>

@@ -37,15 +37,12 @@ builder.Services.AddHttpClient<IComicValidator, ComicValidator>(client =>
     client.BaseAddress = new Uri(apiGatewayUrl);
 });
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
-builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 builder.Services.AddScoped<IFollowRepository, FollowRepository>();
-builder.Services.AddScoped<IFollowService, FollowService>();
 builder.Services.AddScoped<IReadingHistoryRepository, ReadingHistoryRepository>();
-builder.Services.AddScoped<IReadingHistoryService, ReadingHistoryService>();
 builder.Services.AddScoped<ISocialActivityRepository, SocialActivityRepository>();
-builder.Services.AddScoped<ISocialActivityService, SocialActivityService>();
+
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(SocialAPI.Application.Features.Comments.Commands.CreateCommentCommand).Assembly));
 builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
 
 builder.Services.AddMassTransit(x =>

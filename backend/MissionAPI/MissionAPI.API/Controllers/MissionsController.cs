@@ -4,7 +4,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MissionAPI.DTOs;
-using MissionAPI.Interfaces;
+using MediatR;
+using MissionAPI.Application.Features.Missions.Queries;
+using MissionAPI.Application.Features.Missions.Commands;
+using MissionAPI.Application.Features.Notifications.Queries;
+using MissionAPI.Application.Features.Notifications.Commands;
 
 namespace MissionAPI.Controllers
 {
@@ -12,11 +16,11 @@ namespace MissionAPI.Controllers
     [Route("api/[controller]")]
     public class MissionsController : ControllerBase
     {
-        private readonly IMissionService _missionService;
+        private readonly IMediator _mediator;
 
-        public MissionsController(IMissionService missionService)
+        public MissionsController(IMediator mediator)
         {
-            _missionService = missionService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -25,7 +29,7 @@ namespace MissionAPI.Controllers
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (claim == null || !int.TryParse(claim.Value, out var userId)) return Unauthorized();
-            var result = await _missionService.GetUserMissionsAsync(userId);
+            var result = await _mediator.Send(new GetUserMissionsQuery { UserId = userId });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -39,7 +43,7 @@ namespace MissionAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var result = await _missionService.GetUserMissionsAsync(userId);
+            var result = await _mediator.Send(new GetUserMissionsQuery { UserId = userId });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -47,7 +51,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllMissionsForAdmin()
         {
-            var result = await _missionService.GetAllMissionsForAdminAsync();
+            var result = await _mediator.Send(new GetAllMissionsForAdminQuery());
             return StatusCode(result.StatusCode, result);
         }
 
@@ -55,7 +59,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateMission([FromBody] CreateMissionDto request)
         {
-            var result = await _missionService.CreateMissionAsync(request);
+            var result = await _mediator.Send(new CreateMissionCommand { Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -63,7 +67,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateMission(Guid id, [FromBody] UpdateMissionDto request)
         {
-            var result = await _missionService.UpdateMissionAsync(id, request);
+            var result = await _mediator.Send(new UpdateMissionCommand { Id = id, Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -71,7 +75,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteMission(Guid id)
         {
-            var result = await _missionService.DeleteMissionAsync(id);
+            var result = await _mediator.Send(new DeleteMissionCommand { Id = id });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -85,7 +89,7 @@ namespace MissionAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var result = await _missionService.CompleteMissionStepAsync(userId, id);
+            var result = await _mediator.Send(new CompleteMissionStepCommand { UserId = userId, MissionId = id });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -95,7 +99,7 @@ namespace MissionAPI.Controllers
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (claim == null || !int.TryParse(claim.Value, out var userId)) return Unauthorized();
-            var result = await _missionService.TrackLobbyMinuteAsync(userId);
+            var result = await _mediator.Send(new TrackLobbyMinuteQuery { UserId = userId });
             return StatusCode(result.StatusCode, result);
         }
     }

@@ -1,4 +1,6 @@
 using Grpc.Core;
+using MediatR;
+using SocialAPI.Application.Features.SocialActivities.Queries;
 using SocialAPI.Protos;
 using SocialAPI.Interfaces;
 
@@ -6,11 +8,11 @@ namespace SocialAPI.GrpcServices;
 
 public class SocialActivityGrpcService : SocialActivity.SocialActivityBase
 {
-    private readonly ISocialActivityService _socialActivityService;
+    private readonly IMediator _mediator;
 
-    public SocialActivityGrpcService(ISocialActivityService socialActivityService)
+    public SocialActivityGrpcService(IMediator mediator)
     {
-        _socialActivityService = socialActivityService;
+        _mediator = mediator;
     }
 
     public override async Task<GetUserActivitiesResponse> GetUserActivities(
@@ -22,8 +24,7 @@ public class SocialActivityGrpcService : SocialActivity.SocialActivityBase
             throw new RpcException(new Status(StatusCode.InvalidArgument, "UserId is invalid."));
         }
 
-        var activities = await _socialActivityService.GetUserActivitiesAsync(
-            request.UserId, context.CancellationToken);
+        var activities = await _mediator.Send(new GetUserActivitiesQuery { NumericUserId = request.UserId }, context.CancellationToken);
 
         var response = new GetUserActivitiesResponse();
         response.ReadChapters.AddRange(activities.ReadChapters.Select(item => new ActivitySnapshot

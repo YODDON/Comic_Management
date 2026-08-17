@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using ChapterAPI.Interfaces;
+using MediatR;
+using System.Linq;
+using ChapterAPI.Application.Features.Chapters.Queries;
+using ChapterAPI.Application.Features.Chapters.Commands;
 using ChapterAPI.Protos;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -10,14 +13,14 @@ namespace ChapterAPI.GrpcServices
 {
     public class ChapterGrpcService : ChapterGrpc.ChapterGrpcBase
     {
-        private readonly IChapterService _chapterService;
+        private readonly IMediator _mediator;
         private readonly ILogger<ChapterGrpcService> _logger;
 
         public ChapterGrpcService(
-            IChapterService chapterService,
+            IMediator mediator,
             ILogger<ChapterGrpcService> logger)
         {
-            _chapterService = chapterService;
+            _mediator = mediator;
             _logger = logger;
         }
 
@@ -28,7 +31,7 @@ namespace ChapterAPI.GrpcServices
                 return new UnlockChapterResponse { Success = false, AlreadyPurchased = false };
             }
 
-            var result = await _chapterService.UnlockChapterAsync(userId, chapterId);
+            var result = await _mediator.Send(new UnlockChapterCommand { UserId = userId, ChapterId = chapterId });
             return new UnlockChapterResponse { Success = result.Success, AlreadyPurchased = result.AlreadyPurchased };
         }
 
@@ -39,7 +42,7 @@ namespace ChapterAPI.GrpcServices
                 return new CheckResponse { IsPurchased = false };
             }
 
-            var hasPurchased = await _chapterService.IsChapterPurchasedAsync(userId, chapterId);
+            var hasPurchased = await _mediator.Send(new IsChapterPurchasedQuery { UserId = userId, ChapterId = chapterId });
             return new CheckResponse { IsPurchased = hasPurchased };
         }
 
@@ -50,7 +53,7 @@ namespace ChapterAPI.GrpcServices
                 return new GetChapterInfoResponse { Exists = false };
             }
 
-            var chapter = await _chapterService.GetChapterInfoAsync(chapterId);
+            var chapter = await _mediator.Send(new GetChapterInfoQuery { ChapterId = chapterId });
             if (chapter == null)
             {
                 return new GetChapterInfoResponse { Exists = false };
@@ -77,7 +80,7 @@ namespace ChapterAPI.GrpcServices
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "ComicId is invalid."));
             }
 
-            var count = await _chapterService.GetChapterCountAsync(comicId);
+            var count = await _mediator.Send(new GetChapterCountQuery { ComicId = comicId });
             return new GetChapterCountResponse { Count = count };
         }
 
@@ -90,7 +93,7 @@ namespace ChapterAPI.GrpcServices
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "UserId is invalid."));
             }
 
-            var comicIds = await _chapterService.GetPurchasedComicIdsAsync(request.UserId);
+            var comicIds = await _mediator.Send(new GetPurchasedComicIdsQuery { UserId = request.UserId });
             var response = new GetPurchasedComicIdsResponse();
             response.ComicIds.AddRange(comicIds.Select(x => x.ToString()));
             return response;
@@ -105,7 +108,7 @@ namespace ChapterAPI.GrpcServices
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "UserId is invalid."));
             }
 
-            var purchases = await _chapterService.GetUserPurchaseActivitiesAsync(request.UserId);
+            var purchases = await _mediator.Send(new GetUserPurchaseActivitiesQuery { UserId = request.UserId });
             var response = new GetUserPurchaseActivitiesResponse();
             response.Activities.AddRange(purchases.Select(purchase => new PurchaseActivity
             {

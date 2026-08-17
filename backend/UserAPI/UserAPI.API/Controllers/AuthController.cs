@@ -1,7 +1,9 @@
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using UserAPI.Application.DTOs;
-using UserAPI.Application.Interfaces; using UserAPI.Domain.Interfaces;
+using UserAPI.Application.Features.Auth.Commands;
+using UserAPI.Application.Features.Auth.Queries;
 
 namespace UserAPI.API.Controllers
 {
@@ -9,19 +11,18 @@ namespace UserAPI.API.Controllers
     [Route("auth")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly IMediator _mediator;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IMediator mediator)
         {
-            _authService = authService;
+            _mediator = mediator;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
             var userAgent = Request.Headers["User-Agent"].ToString();
-            var result = await _authService.RegisterAsync(request, userAgent);
-
+            var result = await _mediator.Send(new RegisterCommand { Request = request, UserAgent = userAgent });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -30,8 +31,7 @@ namespace UserAPI.API.Controllers
         {
             var userAgent = Request.Headers["User-Agent"].ToString();
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var result = await _authService.LoginAsync(request, userAgent, ipAddress);
-
+            var result = await _mediator.Send(new LoginCommand { Request = request, UserAgent = userAgent, IpAddress = ipAddress });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -45,7 +45,7 @@ namespace UserAPI.API.Controllers
                 return Unauthorized();
             }
 
-            var result = await _authService.GetProfileAsync(userId);
+            var result = await _mediator.Send(new GetProfileQuery { UserId = userId });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -54,7 +54,7 @@ namespace UserAPI.API.Controllers
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequestDto request)
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
-            var result = await _authService.UpdateProfileAsync(userId, request);
+            var result = await _mediator.Send(new UpdateProfileCommand { UserId = userId, Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -63,7 +63,7 @@ namespace UserAPI.API.Controllers
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
-            var result = await _authService.ChangePasswordAsync(userId, request);
+            var result = await _mediator.Send(new ChangePasswordCommand { UserId = userId, Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -73,7 +73,7 @@ namespace UserAPI.API.Controllers
         public async Task<IActionResult> UpdateAvatar([FromForm] UpdateAvatarRequestDto request)
         {
             if (!TryGetUserId(out var userId)) return Unauthorized();
-            var result = await _authService.UpdateAvatarAsync(userId, request.Avatar);
+            var result = await _mediator.Send(new UpdateAvatarCommand { UserId = userId, Avatar = request.Avatar });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -93,7 +93,7 @@ namespace UserAPI.API.Controllers
                 return Unauthorized();
             }
 
-            var result = await _authService.LogoutAsync(userId, request);
+            var result = await _mediator.Send(new LogoutCommand { UserId = userId, Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -101,15 +101,14 @@ namespace UserAPI.API.Controllers
         public async Task<IActionResult> RefetchToken([FromBody] RefreshTokenRequestDto request)
         {
             var userAgent = Request.Headers["User-Agent"].ToString();
-            var result = await _authService.RefreshTokenAsync(request, userAgent);
-
+            var result = await _mediator.Send(new RefreshTokenCommand { Request = request, UserAgent = userAgent });
             return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
         {
-            var result = await _authService.ForgotPasswordAsync(request);
+            var result = await _mediator.Send(new ForgotPasswordCommand { Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -118,14 +117,14 @@ namespace UserAPI.API.Controllers
         {
             if (string.IsNullOrEmpty(token)) return BadRequest(SharedKernel.Responses.ApiResponse<string>.ErrorResponse("Token is required.", 400));
             
-            var result = await _authService.CheckResetPasswordTokenAsync(token);
+            var result = await _mediator.Send(new CheckResetPasswordTokenQuery { Token = token });
             return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
         {
-            var result = await _authService.ResetPasswordAsync(request);
+            var result = await _mediator.Send(new ResetPasswordCommand { Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -133,14 +132,14 @@ namespace UserAPI.API.Controllers
         public async Task<IActionResult> VerifyEmailGet([FromQuery] string token)
         {
             if (string.IsNullOrEmpty(token)) return BadRequest(SharedKernel.Responses.ApiResponse<string>.ErrorResponse("Token is required.", 400));
-            var result = await _authService.VerifyEmailAsync(token);
+            var result = await _mediator.Send(new VerifyEmailCommand { Token = token });
             return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost("verify")]
         public async Task<IActionResult> VerifyEmailPost([FromBody] VerifyEmailRequestDto request)
         {
-            var result = await _authService.VerifyEmailAsync(request.Token);
+            var result = await _mediator.Send(new VerifyEmailCommand { Token = request.Token });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -148,7 +147,7 @@ namespace UserAPI.API.Controllers
         public async Task<IActionResult> ResendConfirm([FromBody] ResendConfirmRequestDto request)
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var result = await _authService.ResendConfirmEmailAsync(request, ipAddress);
+            var result = await _mediator.Send(new ResendConfirmEmailCommand { Request = request, IpAddress = ipAddress });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -157,7 +156,7 @@ namespace UserAPI.API.Controllers
         {
             var userAgent = Request.Headers["User-Agent"].ToString();
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var result = await _authService.LoginByGoogleAsync(request, userAgent, ipAddress);
+            var result = await _mediator.Send(new LoginByGoogleCommand { Request = request, UserAgent = userAgent, IpAddress = ipAddress });
             return StatusCode(result.StatusCode, result);
         }
     }

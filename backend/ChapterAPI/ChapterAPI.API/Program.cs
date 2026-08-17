@@ -40,8 +40,9 @@ builder.Services.AddHttpClient<IComicValidator, ComicValidator>(client =>
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
-builder.Services.AddScoped<IChapterService, ChapterService>();
 builder.Services.AddScoped<IMissionProgressNotifier, MissionProgressNotifier>();
+// Add MediatR for CQRS
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ChapterAPI.Application.Features.Chapters.Queries.GetChapterInfoQuery).Assembly));
 
 builder.Services.AddMassTransit(x =>
 {

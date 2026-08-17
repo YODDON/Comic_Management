@@ -3,20 +3,22 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SocialAPI.Interfaces;
+using MediatR;
+using SocialAPI.Application.Features.Favorites.Commands;
+using SocialAPI.Application.Features.Favorites.Queries;
 
-namespace SocialAPI.Controllers
+namespace SocialAPI.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "Admin,Reader")]
     public class FavoritesController : ControllerBase
     {
-        private readonly IFavoriteService _favoriteService;
+        private readonly IMediator _mediator;
 
-        public FavoritesController(IFavoriteService favoriteService)
+        public FavoritesController(IMediator mediator)
         {
-            _favoriteService = favoriteService;
+            _mediator = mediator;
         }
 
         [HttpGet("me")]
@@ -28,7 +30,7 @@ namespace SocialAPI.Controllers
                 return Unauthorized(new { message = "Unauthorized" });
             }
 
-            var response = await _favoriteService.GetUserFavoritesAsync(userId, page, pageSize);
+            var response = await _mediator.Send(new GetUserFavoritesQuery { UserId = userId, Page = page, PageSize = pageSize });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -41,7 +43,7 @@ namespace SocialAPI.Controllers
                 return Unauthorized(new { message = "Unauthorized" });
             }
 
-            var response = await _favoriteService.AddFavoriteAsync(userId, comicId);
+            var response = await _mediator.Send(new AddFavoriteCommand { UserId = userId, ComicId = comicId });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -54,7 +56,7 @@ namespace SocialAPI.Controllers
                 return Unauthorized(new { message = "Unauthorized" });
             }
 
-            var response = await _favoriteService.RemoveFavoriteAsync(userId, comicId);
+            var response = await _mediator.Send(new RemoveFavoriteCommand { UserId = userId, ComicId = comicId });
             return StatusCode(response.StatusCode, response);
         }
     }

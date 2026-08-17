@@ -1,26 +1,30 @@
+using System;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MediatR;
 using SocialAPI.DTOs;
-using SocialAPI.Interfaces;
+using SocialAPI.Application.Features.ReadingHistories.Commands;
+using SocialAPI.Application.Features.ReadingHistories.Queries;
 
-namespace SocialAPI.Controllers;
+namespace SocialAPI.API.Controllers;
 
 [ApiController]
 [Route("api/reading-history")]
 [Authorize(Roles = "Admin,Reader")]
 public class ReadingHistoryController : ControllerBase
 {
-    private readonly IReadingHistoryService _readingHistoryService;
+    private readonly IMediator _mediator;
 
-    public ReadingHistoryController(IReadingHistoryService readingHistoryService) =>
-        _readingHistoryService = readingHistoryService;
+    public ReadingHistoryController(IMediator mediator) =>
+        _mediator = mediator;
 
     [HttpGet("me")]
     public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
         if (!TryGetUserIds(out _, out var userId)) return Unauthorized();
-        return Ok(await _readingHistoryService.GetMineAsync(userId, page, pageSize));
+        return Ok(await _mediator.Send(new GetMineQuery { UserId = userId, Page = page, PageSize = pageSize }));
     }
 
     [HttpPost]
@@ -29,7 +33,7 @@ public class ReadingHistoryController : ControllerBase
         if (!TryGetUserIds(out var numericUserId, out var userId)) return Unauthorized();
         if (request.ComicId == Guid.Empty || request.ChapterId == Guid.Empty)
             return BadRequest(new { message = "ComicId và ChapterId là bắt buộc." });
-        return Ok(await _readingHistoryService.RecordAsync(numericUserId, userId, request));
+        return Ok(await _mediator.Send(new RecordCommand { NumericUserId = numericUserId, UserId = userId, Request = request }));
     }
 
     private bool TryGetUserIds(out int numericUserId, out Guid userId)

@@ -1,5 +1,9 @@
 using Grpc.Core;
-using MissionAPI.Interfaces;
+using MediatR;
+using MissionAPI.Application.Features.Missions.Queries;
+using MissionAPI.Application.Features.Missions.Commands;
+using MissionAPI.Application.Features.Notifications.Queries;
+using MissionAPI.Application.Features.Notifications.Commands;
 using MissionAPI.Protos;
 using SharedKernel.Enums;
 
@@ -7,11 +11,11 @@ namespace MissionAPI.GrpcServices;
 
 public class MissionProgressGrpcService : MissionProgress.MissionProgressBase
 {
-    private readonly IMissionService _missionService;
+    private readonly IMediator _mediator;
 
-    public MissionProgressGrpcService(IMissionService missionService)
+    public MissionProgressGrpcService(IMediator mediator)
     {
-        _missionService = missionService;
+        _mediator = mediator;
     }
 
     public override async Task<RecordMissionActivityResponse> RecordActivity(
@@ -28,11 +32,13 @@ public class MissionProgressGrpcService : MissionProgress.MissionProgressBase
         DateTime? occurredAt = request.OccurredAtUnixSeconds > 0
             ? DateTimeOffset.FromUnixTimeSeconds(request.OccurredAtUnixSeconds).UtcDateTime
             : null;
-        var result = await _missionService.RecordActivityAsync(
-            request.UserId,
-            type,
-            activityId,
-            occurredAt);
+        var result = await _mediator.Send(new RecordActivityCommand
+        {
+            UserId = request.UserId,
+            Type = type,
+            ActivityId = activityId,
+            OccurredAt = occurredAt
+        });
 
         return new RecordMissionActivityResponse
         {

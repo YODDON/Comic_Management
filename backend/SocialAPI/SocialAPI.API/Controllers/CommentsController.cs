@@ -3,20 +3,22 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MediatR;
 using SocialAPI.DTOs;
-using SocialAPI.Interfaces;
+using SocialAPI.Application.Features.Comments.Commands;
+using SocialAPI.Application.Features.Comments.Queries;
 
-namespace SocialAPI.Controllers
+namespace SocialAPI.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class CommentsController : ControllerBase
     {
-        private readonly ICommentService _commentService;
+        private readonly IMediator _mediator;
 
-        public CommentsController(ICommentService commentService)
+        public CommentsController(IMediator mediator)
         {
-            _commentService = commentService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -27,7 +29,7 @@ namespace SocialAPI.Controllers
                 return BadRequest("ComicId is required and must be a valid GUID.");
             }
 
-            var result = await _commentService.GetCommentsAsync(comicId.Value, page, pageSize);
+            var result = await _mediator.Send(new GetCommentsQuery { ComicId = comicId.Value, Page = page, PageSize = pageSize });
             return Ok(result);
         }
 
@@ -47,7 +49,7 @@ namespace SocialAPI.Controllers
             }
             var userId = ToSocialUserId(numericUserId);
 
-            var result = await _commentService.CreateCommentAsync(numericUserId, userId, dto);
+            var result = await _mediator.Send(new CreateCommentCommand { NumericUserId = numericUserId, UserId = userId, Dto = dto });
             if (result == null)
             {
                 return NotFound("Comic not found");
@@ -71,7 +73,7 @@ namespace SocialAPI.Controllers
 
             try
             {
-                var success = await _commentService.DeleteCommentAsync(id, userId, isAdmin);
+                var success = await _mediator.Send(new DeleteCommentCommand { Id = id, UserId = userId, IsAdmin = isAdmin });
                 if (!success)
                 {
                     return NotFound();

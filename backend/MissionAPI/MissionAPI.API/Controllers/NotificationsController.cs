@@ -4,7 +4,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MissionAPI.DTOs;
-using MissionAPI.Interfaces;
+using MediatR;
+using MissionAPI.Application.Features.Missions.Queries;
+using MissionAPI.Application.Features.Missions.Commands;
+using MissionAPI.Application.Features.Notifications.Queries;
+using MissionAPI.Application.Features.Notifications.Commands;
 
 namespace MissionAPI.Controllers
 {
@@ -13,11 +17,11 @@ namespace MissionAPI.Controllers
     [Authorize(Roles = "Admin,Reader")]
     public class NotificationsController : ControllerBase
     {
-        private readonly INotificationService _notificationService;
+        private readonly IMediator _mediator;
 
-        public NotificationsController(INotificationService notificationService)
+        public NotificationsController(IMediator mediator)
         {
-            _notificationService = notificationService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -29,7 +33,7 @@ namespace MissionAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var result = await _notificationService.GetNotificationsAsync(userId, isRead, pageIndex, pageSize);
+            var result = await _mediator.Send(new GetNotificationsQuery { UserId = userId, IsRead = isRead, PageIndex = pageIndex, PageSize = pageSize });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -37,7 +41,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateNotification([FromBody] CreateNotificationDto request)
         {
-            var result = await _notificationService.CreateNotificationAsync(request);
+            var result = await _mediator.Send(new CreateNotificationCommand { Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -45,7 +49,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllForAdmin()
         {
-            var result = await _notificationService.GetAllNotificationsForAdminAsync();
+            var result = await _mediator.Send(new GetAllNotificationsForAdminQuery());
             return StatusCode(result.StatusCode, result);
         }
 
@@ -53,7 +57,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateForAdmin(Guid id, [FromBody] UpdateNotificationDto request)
         {
-            var result = await _notificationService.UpdateNotificationAsync(id, request);
+            var result = await _mediator.Send(new UpdateNotificationCommand { Id = id, Request = request });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -61,7 +65,7 @@ namespace MissionAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteForAdmin(Guid id)
         {
-            var result = await _notificationService.DeleteNotificationForAdminAsync(id);
+            var result = await _mediator.Send(new DeleteNotificationForAdminCommand { Id = id });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -74,7 +78,7 @@ namespace MissionAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var result = await _notificationService.MarkAsReadAsync(userId, id);
+            var result = await _mediator.Send(new MarkAsReadCommand { UserId = userId, Id = id });
             return StatusCode(result.StatusCode, result);
         }
 
@@ -87,7 +91,7 @@ namespace MissionAPI.Controllers
                 return Unauthorized(new { Message = "Invalid token." });
             }
 
-            var result = await _notificationService.DeleteNotificationAsync(userId, id);
+            var result = await _mediator.Send(new DeleteNotificationCommand { UserId = userId, Id = id });
             return StatusCode(result.StatusCode, result);
         }
     }

@@ -1,31 +1,24 @@
 using System.Threading.Tasks;
 using MassTransit;
-using Microsoft.Extensions.Logging;
 using SharedKernel.Events;
-using ComicAPI.Application.Interfaces;
+using MediatR;
+using ComicAPI.Application.Features.Comics.Commands;
 
 namespace ComicAPI.API.Consumers
 {
     public class ComicViewedEventConsumer : IConsumer<ComicViewedIntegrationEvent>
     {
-        private readonly IComicService _comicService;
-        private readonly ILogger<ComicViewedEventConsumer> _logger;
+        private readonly IMediator _mediator;
 
-        public ComicViewedEventConsumer(IComicService comicService, ILogger<ComicViewedEventConsumer> logger)
+        public ComicViewedEventConsumer(IMediator mediator)
         {
-            _comicService = comicService;
-            _logger = logger;
+            _mediator = mediator;
         }
 
         public async Task Consume(ConsumeContext<ComicViewedIntegrationEvent> context)
         {
-            _logger.LogInformation("Consuming ComicViewedIntegrationEvent for ComicId: {ComicId}", context.Message.ComicId);
-            
-            var success = await _comicService.IncrementViewCountAsync(context.Message.ComicId);
-            if (!success)
-            {
-                _logger.LogWarning("Failed to increment view for ComicId: {ComicId}", context.Message.ComicId);
-            }
+            var message = context.Message;
+            await _mediator.Send(new IncrementComicViewCommand { ComicId = message.ComicId });
         }
     }
 }

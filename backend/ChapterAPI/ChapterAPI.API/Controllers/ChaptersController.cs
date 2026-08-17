@@ -1,7 +1,9 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using ChapterAPI.Interfaces;
+using MediatR;
+using ChapterAPI.Application.Features.Chapters.Queries;
+using ChapterAPI.Application.Features.Chapters.Commands;
 using ChapterAPI.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +14,11 @@ namespace ChapterAPI.Controllers
     [ApiController]
     public class ChaptersController : ControllerBase
     {
-        private readonly IChapterService _chapterService;
+        private readonly IMediator _mediator;
 
-        public ChaptersController(IChapterService chapterService)
+        public ChaptersController(IMediator mediator)
         {
-            _chapterService = chapterService;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -41,8 +43,7 @@ namespace ChapterAPI.Controllers
                 status = "Published";
             }
 
-            var response = await _chapterService.GetChaptersAsync(
-                comicId, search, status, pageNumber, pageSize, currentUserId);
+            var response = await _mediator.Send(new GetChaptersQuery { ComicId = comicId, Search = search, Status = status, PageNumber = pageNumber, PageSize = pageSize, CurrentUserId = currentUserId });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -58,14 +59,14 @@ namespace ChapterAPI.Controllers
             // Reader is the normal verified-user role and must still purchase paid chapters.
             bool isAdminOrAuthor = User.IsInRole("Admin");
 
-            var response = await _chapterService.GetChapterDetailAsync(id, includePages, currentUserId, isAdminOrAuthor);
+            var response = await _mediator.Send(new GetChapterDetailQuery { Id = id, IncludePages = includePages, CurrentUserId = currentUserId, IsAdminOrAuthor = isAdminOrAuthor });
             return StatusCode(response.StatusCode, response);
         }
         [HttpPost]
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> CreateChapter([FromBody] ChapterAPI.DTOs.CreateChapterRequestDto request)
         {
-            var response = await _chapterService.CreateChapterAsync(request);
+            var response = await _mediator.Send(new CreateChapterCommand { Request = request });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -73,7 +74,7 @@ namespace ChapterAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> UpdateChapter(Guid id, [FromBody] ChapterAPI.DTOs.UpdateChapterRequestDto request)
         {
-            var response = await _chapterService.UpdateChapterAsync(id, request);
+            var response = await _mediator.Send(new UpdateChapterCommand { Id = id, Request = request });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -81,7 +82,7 @@ namespace ChapterAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteChapter(Guid id)
         {
-            var response = await _chapterService.DeleteChapterAsync(id);
+            var response = await _mediator.Send(new DeleteChapterCommand { Id = id });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -89,7 +90,7 @@ namespace ChapterAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> AddPagesBulk(Guid id, [FromForm] System.Collections.Generic.List<Microsoft.AspNetCore.Http.IFormFile> files)
         {
-            var response = await _chapterService.AddPagesBulkAsync(id, files);
+            var response = await _mediator.Send(new AddPagesBulkCommand { ChapterId = id, Files = files });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -97,7 +98,7 @@ namespace ChapterAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> AddPagesByUrls(Guid id, [FromBody] ChapterAPI.DTOs.AddPagesByUrlsRequestDto request)
         {
-            var response = await _chapterService.AddPagesByUrlsAsync(id, request.Urls);
+            var response = await _mediator.Send(new AddPagesByUrlsCommand { ChapterId = id, Urls = request.Urls });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -112,7 +113,7 @@ namespace ChapterAPI.Controllers
             }
             bool isAdminOrAuthor = User.IsInRole("Admin");
 
-            var response = await _chapterService.GetChapterPagesAsync(id, currentUserId, isAdminOrAuthor);
+            var response = await _mediator.Send(new GetChapterPagesQuery { Id = id, CurrentUserId = currentUserId, IsAdminOrAuthor = isAdminOrAuthor });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -127,7 +128,7 @@ namespace ChapterAPI.Controllers
             }
             bool isAdminOrAuthor = User.IsInRole("Admin");
 
-            var response = await _chapterService.GetChapterPagesBySlugAsync(comicId, slug, currentUserId, isAdminOrAuthor);
+            var response = await _mediator.Send(new GetChapterPagesBySlugQuery { ComicId = comicId, Slug = slug, CurrentUserId = currentUserId, IsAdminOrAuthor = isAdminOrAuthor });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -135,7 +136,7 @@ namespace ChapterAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> ReorderPages(Guid id, [FromBody] System.Collections.Generic.List<ChapterAPI.DTOs.ReorderPageDto> request)
         {
-            var response = await _chapterService.ReorderPagesAsync(id, request);
+            var response = await _mediator.Send(new ReorderPagesCommand { ChapterId = id, Request = request });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -143,7 +144,7 @@ namespace ChapterAPI.Controllers
         [Authorize(Roles = "Admin,Reader")]
         public async Task<IActionResult> DeletePage(Guid id, Guid pageId)
         {
-            var response = await _chapterService.DeletePageAsync(id, pageId);
+            var response = await _mediator.Send(new DeletePageCommand { ChapterId = id, PageId = pageId });
             return StatusCode(response.StatusCode, response);
         }
 
@@ -153,7 +154,7 @@ namespace ChapterAPI.Controllers
             Guid id,
             [FromBody] DeleteChapterPagesRequestDto request)
         {
-            var response = await _chapterService.DeletePagesAsync(id, request.PageIds);
+            var response = await _mediator.Send(new DeletePagesCommand { ChapterId = id, PageIds = request.PageIds });
             return StatusCode(response.StatusCode, response);
         }
     }

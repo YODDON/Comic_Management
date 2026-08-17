@@ -9,11 +9,11 @@ namespace UserAPI.API.GrpcServices
 {
     public class UserGrpcService : UserService.UserServiceBase
     {
-        private readonly IUserQueryService _userQueryService;
+        private readonly MediatR.IMediator _mediator;
 
-        public UserGrpcService(IUserQueryService userQueryService)
+        public UserGrpcService(MediatR.IMediator mediator)
         {
-            _userQueryService = userQueryService;
+            _mediator = mediator;
         }
 
         public override async Task<UserResponse> GetUserById(GetUserByIdRequest request, ServerCallContext context)
@@ -23,7 +23,7 @@ namespace UserAPI.API.GrpcServices
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Invalid user ID format."));
             }
 
-            var user = await _userQueryService.GetUserByIdAsync(userId);
+            var user = await _mediator.Send(new Application.Features.UserQueries.Queries.GetUserByIdQuery { Id = userId });
             if (user == null)
             {
                 throw new RpcException(new Status(StatusCode.NotFound, "User not found."));
@@ -55,7 +55,7 @@ namespace UserAPI.API.GrpcServices
                 }
             }
 
-            var users = await _userQueryService.GetUsersByIdsAsync(userIds);
+            var users = await _mediator.Send(new Application.Features.UserQueries.Queries.GetUsersByIdsQuery { Ids = userIds });
             var response = new UsersListResponse();
 
             foreach (var user in users)
@@ -78,17 +78,17 @@ namespace UserAPI.API.GrpcServices
             return response;
         }
 
-        public override Task<ValidateTokenResponse> ValidateToken(ValidateTokenRequest request, ServerCallContext context)
+        public override async Task<ValidateTokenResponse> ValidateToken(ValidateTokenRequest request, ServerCallContext context)
         {
             if (string.IsNullOrEmpty(request.Token))
             {
-                return Task.FromResult(new ValidateTokenResponse { IsValid = false });
+                return new ValidateTokenResponse { IsValid = false };
             }
 
-            var claimsPrincipal = _userQueryService.ValidateToken(request.Token);
+            var claimsPrincipal = await _mediator.Send(new Application.Features.UserQueries.Queries.ValidateTokenQuery { Token = request.Token });
             if (claimsPrincipal == null)
             {
-                return Task.FromResult(new ValidateTokenResponse { IsValid = false });
+                return new ValidateTokenResponse { IsValid = false };
             }
 
             var userIdClaim = claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -101,7 +101,7 @@ namespace UserAPI.API.GrpcServices
             };
             response.Roles.AddRange(roleClaims);
 
-            return Task.FromResult(response);
+            return response;
         }
     }
 }
