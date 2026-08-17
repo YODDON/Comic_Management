@@ -1,5 +1,6 @@
 using MassTransit;
-using MissionAPI.Interfaces;
+using MissionAPI.Application.Features.Missions.Commands;
+using MediatR;
 using SharedKernel.Events;
 using Microsoft.Extensions.Logging;
 
@@ -7,14 +8,14 @@ namespace MissionAPI.Consumers;
 
 public class MissionActivityRecordedConsumer : IConsumer<MissionActivityRecordedEvent>
 {
-    private readonly IMissionService _missionService;
+    private readonly IMediator _mediator;
     private readonly ILogger<MissionActivityRecordedConsumer> _logger;
 
     public MissionActivityRecordedConsumer(
-        IMissionService missionService,
+        IMediator mediator,
         ILogger<MissionActivityRecordedConsumer> logger)
     {
-        _missionService = missionService;
+        _mediator = mediator;
         _logger = logger;
     }
 
@@ -24,11 +25,13 @@ public class MissionActivityRecordedConsumer : IConsumer<MissionActivityRecorded
         
         try
         {
-            var result = await _missionService.RecordActivityAsync(
-                message.UserId,
-                message.MissionType,
-                message.ActivityId,
-                message.OccurredAt);
+            var result = await _mediator.Send(new RecordActivityCommand
+            {
+                UserId = message.UserId,
+                Type = message.MissionType,
+                ActivityId = message.ActivityId,
+                OccurredAt = message.OccurredAt
+            });
                 
             if (!result.Success)
             {

@@ -11,21 +11,23 @@ namespace WalletAPI.Consumers;
 
 public class MissionRewardGrantedConsumer : IConsumer<MissionRewardGrantedEvent>
 {
-    private readonly IWalletApplicationService _walletService;
+    private readonly IMediator _mediator;
 
-    public MissionRewardGrantedConsumer(IWalletApplicationService walletService)
+    public MissionRewardGrantedConsumer(IMediator mediator)
     {
-        _walletService = walletService;
+        _mediator = mediator;
     }
 
     public async Task Consume(ConsumeContext<MissionRewardGrantedEvent> context)
     {
         var msg = context.Message;
-        await _walletService.AddCoinAsync(
-            msg.UserId, 
-            msg.CoinAmount, 
-            msg.ReferenceId, 
-            "MissionReward", 
-            msg.Description);
+        await _mediator.Send(new AddCoinCommand
+        {
+            UserId = msg.UserId, 
+            Amount = msg.CoinAmount, 
+            ReferenceId = msg.ReferenceId, 
+            CreditType = "MissionReward", 
+            Description = msg.Description
+        });
     }
 }

@@ -39,13 +39,16 @@ namespace WalletAPI.Application.Consumers
                 }
                 else
                 {
-                    var reason = result.InsufficientBalance ? "Số dư Dâu không đủ để thực hiện giao dịch." : "Giao dịch không thành công.";
+                    var reason = result.InsufficientBalance ? "Số dư không đủ để thực hiện giao dịch." : "Giao dịch không thành công.";
                     await context.Publish(new WalletDebitFailedEvent(msg.CorrelationId, reason));
                 }
+
+                await _repository.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                await context.Publish(new WalletDebitFailedEvent(msg.CorrelationId, $"Lỗi hệ thống khi trừ Dâu: {ex.Message}"));
+                await context.Publish(new WalletDebitFailedEvent(msg.CorrelationId, $"Lỗi hệ thống khi trừ DB: {ex.Message}"));
+                await _repository.SaveChangesAsync();
             }
         }
     }

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PaymentAPI.Domain.Entities;
 using PaymentAPI.Entities;
+using MassTransit;
 using MassTransit.EntityFrameworkCoreIntegration;
 
 namespace PaymentAPI.Data
@@ -18,6 +19,11 @@ namespace PaymentAPI.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+            
             modelBuilder.Entity<Transaction>(entity =>
             {
                 entity.Property(x => x.Amount).HasPrecision(18, 2);

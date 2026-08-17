@@ -25,6 +25,7 @@ namespace ChapterAPI.Application.Consumers
                 // `unlocked` is true if a new record was added, or false if already unlocked.
                 // In both cases, the chapter is considered unlocked.
                 await context.Publish(new ChapterUnlockedEvent(msg.CorrelationId));
+                await _repository.SaveChangesAsync();
             }
             catch (Exception ex)
             {

@@ -9,4 +9,5 @@ public interface IWalletRepository
         int userId, decimal amount, Guid referenceId, TransactionType type, string description);
     Task<WalletDebitResultDto> DebitAsync(
         int userId, decimal amount, Guid referenceId, string description);
+    Task SaveChangesAsync();
 }

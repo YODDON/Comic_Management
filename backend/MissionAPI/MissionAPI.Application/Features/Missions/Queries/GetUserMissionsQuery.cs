@@ -22,18 +22,15 @@ namespace MissionAPI.Application.Features.Missions.Queries
     {
         private readonly IMissionRepository _missionRepository;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly IMissionActivitySyncService _activitySyncService;
 
-        public GetUserMissionsQueryHandler(IMissionRepository missionRepository, IPublishEndpoint publishEndpoint, IMissionActivitySyncService activitySyncService)
+        public GetUserMissionsQueryHandler(IMissionRepository missionRepository, IPublishEndpoint publishEndpoint)
         {
             _missionRepository = missionRepository;
             _publishEndpoint = publishEndpoint;
-            _activitySyncService = activitySyncService;
         }
 
         public async Task<ApiResponse<IEnumerable<UserMissionDto>>> Handle(GetUserMissionsQuery request, CancellationToken cancellationToken)
         {
-            await _activitySyncService.SyncAsync(request.UserId);
             var userMissions = await _missionRepository.GetUserMissionsAsync(request.UserId);
             var progress = userMissions.ToDictionary(x => x.MissionId);
             var missions = await _missionRepository.GetAllMissionsAsync();
