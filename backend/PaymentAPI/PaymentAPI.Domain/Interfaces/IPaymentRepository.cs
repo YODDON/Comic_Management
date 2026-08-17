@@ -17,6 +17,7 @@ namespace PaymentAPI.Interfaces
             int pageSize);
         Task<Transaction?> GetTransactionByIdAsync(Guid id);
         Task<Transaction?> GetTransactionByCodeAsync(string transactionCode);
+        Task<Transaction?> GetTransactionByNotePrefixAsync(string notePrefix);
         Task<UserPurchase?> GetUserPurchaseAsync(int userId, Guid chapterId);
         Task AddTransactionAsync(Transaction transaction);
         Task UpdateTransactionAsync(Transaction transaction);

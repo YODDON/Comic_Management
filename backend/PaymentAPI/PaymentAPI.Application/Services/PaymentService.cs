@@ -350,46 +350,76 @@ namespace PaymentAPI.Services
                 return new ApiResponse<bool>(false, "Transaction code not found in content.", 404);
             }
 
-            var transaction = await _repository.GetTransactionByCodeAsync(transactionCode);
+            // 1. Check if we already have a transaction tracking THIS specific webhook (by SePay Id)
+            var existingTrackingTx = await _repository.GetTransactionByNotePrefixAsync($"SEPAY id={request.Id};");
+            
+            Transaction targetTransaction;
+            decimal requestedAmount;
 
-            if (transaction == null)
+            if (existingTrackingTx != null)
             {
-                return new ApiResponse<bool>(false, "Transaction not found.", 404);
+                if (existingTrackingTx.Status == TransactionStatus.Completed)
+                {
+                    // Already processed successfully. Idempotent return.
+                    return new ApiResponse<bool>(true, "Webhook already processed.");
+                }
+                
+                // It is Pending (failed to credit WalletAPI previously). We retry.
+                targetTransaction = existingTrackingTx;
+                requestedAmount = targetTransaction.Amount;
+            }
+            else
+            {
+                // This webhook has never been seen before.
+                var originalTx = await _repository.GetTransactionByCodeAsync(transactionCode);
+
+                if (originalTx == null)
+                {
+                    return new ApiResponse<bool>(false, "Transaction not found.", 404);
+                }
+
+                if (request.TransferAmount <= 0)
+                {
+                    return new ApiResponse<bool>(false, "Transfer amount must be positive.", 400);
+                }
+
+                if (originalTx.Status == TransactionStatus.Pending && string.IsNullOrEmpty(originalTx.Note))
+                {
+                    // First payment for this QR code. Take over the pending transaction.
+                    targetTransaction = originalTx;
+                    requestedAmount = targetTransaction.Amount;
+                }
+                else
+                {
+                    // The QR code was paid before (or already taken by another webhook).
+                    // Create a new transaction for this extra payment.
+                    targetTransaction = new Transaction
+                    {
+                        UserId = originalTx.UserId,
+                        Type = SharedKernel.Enums.TransactionType.ManualTopUp,
+                        Amount = request.TransferAmount,
+                        CurrencyType = "VND",
+                        Status = TransactionStatus.Pending,
+                        PaymentMethod = "VIETQR",
+                        TransactionCode = transactionCode,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await _repository.AddTransactionAsync(targetTransaction);
+                    requestedAmount = request.TransferAmount; // No mismatch for extra payments
+                }
+
+                targetTransaction.Amount = request.TransferAmount;
+                targetTransaction.Note = BuildSePayNote(request, requestedAmount);
+                await _repository.UpdateTransactionAsync(targetTransaction);
             }
 
-            if (transaction.Status != TransactionStatus.Pending)
-            {
-                return new ApiResponse<bool>(false, "Transaction already processed.", 409);
-            }
-
-            if (request.TransferAmount <= 0)
-            {
-                return new ApiResponse<bool>(false, "Transfer amount must be positive.", 400);
-            }
-
-            // Credit what ACTUALLY arrived, not what was requested.
-            //
-            // The QR only pre-fills the amount; the payer can edit it in their banking app, so an
-            // under- or over-payment is normal, not exceptional. The money is already in the bank —
-            // crediting transaction.Amount (the requested figure) instead of the real transfer would
-            // short the payer on an overpayment, and the old code went further and *rejected*
-            // underpayments, throwing away money that had genuinely arrived. Since manual approval was
-            // removed (F906), a rejected order has no rescue path, so we never reject on amount.
-            //
-            // The requested figure is kept in Note for reconciliation; transaction.Amount becomes the
-            // amount truly received (and therefore the amount credited, via CreditWalletForTopUpAsync).
-            var requestedAmount = transaction.Amount;
-            transaction.Amount = request.TransferAmount;
-
-            if (!await CreditWalletForTopUpAsync(transaction))
+            if (!await CreditWalletForTopUpAsync(targetTransaction))
             {
                 return ApiResponse<bool>.ErrorResponse("Could not credit the wallet. Transaction stays pending; retry later.", 503);
             }
 
-            transaction.Status = TransactionStatus.Completed;
-            // Keep SePay's own identifiers (and the requested figure, if it differed) for reconciliation.
-            transaction.Note = BuildSePayNote(request, requestedAmount);
-            await _repository.UpdateTransactionAsync(transaction);
+            targetTransaction.Status = TransactionStatus.Completed;
+            await _repository.UpdateTransactionAsync(targetTransaction);
 
             return new ApiResponse<bool>(true, "Topup transaction completed via SePay Webhook.");
         }

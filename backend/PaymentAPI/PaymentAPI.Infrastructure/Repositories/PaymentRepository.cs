@@ -81,6 +81,11 @@ namespace PaymentAPI.Repositories
             return await _context.Transactions.FirstOrDefaultAsync(t => t.TransactionCode == transactionCode);
         }
 
+        public async Task<Transaction?> GetTransactionByNotePrefixAsync(string notePrefix)
+        {
+            return await _context.Transactions.FirstOrDefaultAsync(t => t.Note != null && t.Note.StartsWith(notePrefix));
+        }
+
         public async Task<UserPurchase?> GetUserPurchaseAsync(int userId, Guid chapterId)
         {
             return await _context.UserPurchases
