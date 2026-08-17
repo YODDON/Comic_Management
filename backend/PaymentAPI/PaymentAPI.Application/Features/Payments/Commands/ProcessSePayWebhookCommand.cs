@@ -126,7 +126,7 @@ namespace PaymentAPI.Application.Features.Payments.Commands
                 {
                     await _repository.UpdateTransactionAsync(targetTransaction);
                 }
-                catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+                catch (Exception ex) when (ex.GetType().Name == "DbUpdateException")
                 {
                     // Unique constraint violation: another webhook already claimed this Id concurrently.
                     return new ApiResponse<bool>(true, "Webhook already processed concurrently.");
