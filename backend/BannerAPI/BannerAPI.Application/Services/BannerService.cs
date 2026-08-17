@@ -1,6 +1,7 @@
 using BannerAPI.DTOs;
 using BannerAPI.Entities;
 using BannerAPI.Interfaces;
+using Microsoft.AspNetCore.Http;
 using SharedKernel.Responses;
 
 namespace BannerAPI.Services;

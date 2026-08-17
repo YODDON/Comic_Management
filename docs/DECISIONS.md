@@ -217,3 +217,13 @@ Do not treat hiding a button or using a frontend route guard as authorization.
 **Decision:** We migrated SocialAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure). Application interfaces such as `IComicValidator` and `IMissionProgressNotifier` were correctly segregated into the Application layer, while data-centric repository interfaces stayed in the Domain or Application layers based on whether they returned DTOs.
 
 **Consequences:** Improved maintainability and consistent architecture.
+
+## [ADR-004] BannerAPI Clean Architecture Migration
+
+**Status:** Implemented
+
+**Context:** Following ADR-004, BannerAPI needed to be migrated to Clean Architecture to maintain consistency across the solution.
+
+**Decision:** We migrated BannerAPI to the 4-project Clean Architecture structure (API, Application, Domain, Infrastructure). Specific infrastructure dependencies such as `CloudinaryDotNet` were isolated in the Infrastructure project, exposing only `ICloudinaryService` to the Application layer.
+
+**Consequences:** Improved maintainability, consistent architecture, and isolated external dependencies.
