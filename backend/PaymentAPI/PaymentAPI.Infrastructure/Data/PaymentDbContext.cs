@@ -31,6 +31,7 @@ namespace PaymentAPI.Data
                 entity.Property(x => x.Type).HasConversion<string>().HasMaxLength(30);
                 entity.Property(x => x.Note).HasMaxLength(1000);
                 entity.HasIndex(x => x.TransactionCode).IsUnique().HasFilter("[TransactionCode] <> ''");
+                entity.HasIndex(x => x.ExternalTransactionId).IsUnique().HasFilter("[ExternalTransactionId] IS NOT NULL");
             });
             modelBuilder.Entity<UserPurchase>(entity =>
             {

@@ -120,7 +120,17 @@ namespace PaymentAPI.Application.Features.Payments.Commands
 
                 targetTransaction.Amount = request.Request.TransferAmount;
                 targetTransaction.Note = BuildSePayNote(request.Request, requestedAmount);
-                await _repository.UpdateTransactionAsync(targetTransaction);
+                targetTransaction.ExternalTransactionId = request.Request.Id.ToString();
+                
+                try
+                {
+                    await _repository.UpdateTransactionAsync(targetTransaction);
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+                {
+                    // Unique constraint violation: another webhook already claimed this Id concurrently.
+                    return new ApiResponse<bool>(true, "Webhook already processed concurrently.");
+                }
             }
 
             if (!await CreditWalletForTopUpAsync(targetTransaction))
